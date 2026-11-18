@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Resmi Gazete CLI & FastMCP Dokümantasyonu</title>
+  <meta name="description" content="T.C. Resmî Gazete için yüksek performanslı Python SDK, CLI aracı ve FastMCP sunucusu. Kanun, karar, yönetmelik ve tebliğ sorgulama.">
+  <meta name="keywords" content="resmi gazete, mevzuat, kanun, karar, tebliğ, yargı, python, cli, mcp, fastmcp, anthropic mcp, cursor, claude desktop">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    (function () {
+      try {
+        const stored = localStorage.getItem("color-scheme");
+        if (stored === "light" || stored === "dark") {
+          document.querySelector('meta[name="color-scheme"]').content = stored;
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#" class="brand">
+        <img src="logo.svg" alt="Resmi Gazete CLI Logo" class="brand-icon" width="32" height="32">
+        <span>Resmi Gazete CLI</span>
+        <span class="version-pill">v0.1.2</span>
+      </a>
+
+      <nav aria-label="Ana Menü">
+        <ul class="nav-links">
+          <li><a href="#mimari" class="nav-link">Mimari</a></li>
+          <li><a href="#hizli-baslangic" class="nav-link">Kurulum</a></li>
+          <li><a href="#cli" class="nav-link">CLI & Sihirbaz</a></li>
+          <li><a href="#mcp" class="nav-link">FastMCP</a></li>
+          <li><a href="#python-sdk" class="nav-link">Python SDK</a></li>
+          <li><a href="#guvenlik" class="nav-link">Güvenlik</a></li>
+          <li><a href="#faq" class="nav-link">SSS</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <button id="theme-toggle" class="btn-icon" aria-label="Tema Değiştir" title="Açık/Koyu Tema">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        </button>
+
+        <a href="https://github.com/AtaCanYmc/resmi-gazete-cli" target="_blank" rel="noopener noreferrer" class="btn-icon" aria-label="GitHub Deposu" title="GitHub Deposu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+          </svg>
+        </a>
+
+        <button class="btn-icon mobile-nav-toggle" aria-label="Menüyü Aç" aria-expanded="false">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <div class="hero-tag">Açık Kaynak Geliştirici Araç Seti</div>
+          <h1 class="hero-title">T.C. Resmî Gazete Scraper, CLI ve FastMCP Sunucusu</h1>
+          <p class="hero-lead">
+            Resmî Gazete sayılarını, kanunları, cumhurbaşkanı kararlarını ve tebliğleri terminalden yapılandırılmış formatta sorgulayın, Python projelerine bağlayın veya LLM ajanlarına yerel Model Context Protocol (MCP) ile entegre edin.
+          </p>
+
+          <div class="hero-actions">
+            <a href="#cli" class="btn btn-primary">CLI Komut Sihirbazı</a>
+            <a href="#mcp" class="btn btn-secondary">FastMCP Entegrasyonu</a>
+            <a href="#python-sdk" class="btn btn-secondary">Python SDK</a>
+          </div>
+        </div>
+
+        <!-- Accessible Installation Tab Box -->
+        <div class="install-box">
+          <div class="install-header">
+            <div class="tab-list" role="tablist" focusgroup="tablist nomemory" aria-label="Paket Yöneticisi Seçimi">
+              <button type="button" class="tab-btn" role="tab" id="tab-pip" aria-selected="true" focusgroupstart aria-controls="panel-pip">pip</button>
+              <button type="button" class="tab-btn" role="tab" id="tab-uv" aria-selected="false" aria-controls="panel-uv">uv tool</button>
+              <button type="button" class="tab-btn" role="tab" id="tab-brew" aria-selected="false" aria-controls="panel-brew">homebrew</button>
+            </div>
+            <button type="button" class="copy-btn" id="install-copy-btn" data-copy-target="active-install-code" aria-label="Kurulum komutunu kopyala">Kopyala</button>
+          </div>
+          <div class="install-body">
+            <div role="tabpanel" id="panel-pip" aria-labelledby="tab-pip" tabindex="0">
+              <pre class="code-snippet"><code id="active-install-code">pip install resmi-gazete-cli</code></pre>
+            </div>
+            <div role="tabpanel" id="panel-uv" aria-labelledby="tab-uv" hidden="until-found">
+              <pre class="code-snippet"><code>uv tool install resmi-gazete-cli</code></pre>
+            </div>
+            <div role="tabpanel" id="panel-brew" aria-labelledby="tab-brew" hidden="until-found">
+              <pre class="code-snippet"><code>brew tap atacanymc/tap && brew install atacanymc/tap/resmi-gazete-cli</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture & Capability Section -->
+    <section id="mimari" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Mimarî Genel Bakış</div>
+          <h2 class="section-title">Modüler Katmanlar ve Doğrulanabilir Veri Akışı</h2>
+          <p class="section-description">
+            Sistem harici bağımlılıkları en aza indirir; HTTP/2 bağlantı havuzu, windows-1254 Türkçe karakter kodlama düzelticisi ve Pydantic V2 veri doğrulama modelleriyle çalışır.
+          </p>
+        </div>
+
+        <div class="arch-grid">
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">1. Scraper & Core Motor</h3>
+            </div>
+            <p class="arch-card-desc">
+              <code>httpx.AsyncClient</code> ile <code>resmigazete.gov.tr</code> arşivine bağlanır. HTML tablolarını ve DataTables JSON yanıtlarını Pydantic nesnelerine dönüştürür.
+            </p>
+            <div class="arch-card-meta">
+              Bileşenler: <code>ResmiGazeteClient</code>, <code>GazetteDay</code>, <code>SearchCriteria</code>
+            </div>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">2. Terminal CLI Arayüzü</h3>
+            </div>
+            <p class="arch-card-desc">
+              Click ve Rich kütüphaneleriyle yapılandırılmış, renkli ve sütun hizalı terminal tabloları çizer. Otomasyonlar için doğrudan <code>json</code> ve <code>md</code> çıktısı verir.
+            </p>
+            <div class="arch-card-meta">
+              Komutlar: <code>daily</code>, <code>search</code>
+            </div>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">3. FastMCP Sunucusu</h3>
+            </div>
+            <p class="arch-card-desc">
+              Claude Desktop, Cursor ve VS Code ajanlarına <code>stdio</code> protokolü üzerinden doğrudan 4 adet optimize araç sunar. LLM bağlamını gereksiz etiketlerden temizler.
+            </p>
+            <div class="arch-card-meta">
+              Sunucu: <code>resmi-gazete-mcp</code> (JSON-RPC stdio)
+            </div>
+          </div>
+        </div>
+
+        <!-- Capability Matrix Table -->
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Kullanım Katmanı</th>
+                <th>Hedef Kitle</th>
+                <th>Çıktı Formatları</th>
+                <th>Öne Çıkan Özellik</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>CLI</strong></td>
+                <td>Geliştiriciler, Hukukçular, Sistem Yöneticileri</td>
+                <td>Rich Tablo, JSON, Markdown</td>
+                <td>Sıfır kurulum gereksinimiyle doğrudan terminalden günlük gazete ve arama sorgusu</td>
+              </tr>
+              <tr>
+                <td><strong>FastMCP</strong></td>
+                <td>Claude Desktop, Cursor, AI Kodlama Ajanları</td>
+                <td>LLM Tool Yanıtı (JSON / Düz Metin)</td>
+                <td>Mevzuat tam metinlerini windows-1254 çözümüyle token tasarruflu sunma</td>
+              </tr>
+              <tr>
+                <td><strong>Python SDK</strong></td>
+                <td>Backend Servisleri, Veri Analizi Boru Hatları</td>
+                <td>Pydantic V2 Modelleri</td>
+                <td>Tam tip güvenli asenkron istemci, hata sınıflandırması ve bağlantı havuzu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="hizli-baslangic" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Hızlı Başlangıç</div>
+          <h2 class="section-title">Doğrulanmış Kurulum Adımları</h2>
+          <p class="section-description">
+            Ortamınıza uygun paketi seçin ve komutları doğrudan terminalinizde çalıştırın.
+          </p>
+        </div>
+
+        <div class="code-card">
+          <div class="code-card-header">
+            <span class="code-card-title">Terminal · Paket Yöneticisi ile Kurulum</span>
+            <button type="button" class="copy-btn" data-copy-target="code-quickstart">Kopyala</button>
+          </div>
+          <pre id="code-quickstart"><code># 1. PyPI üzerinden standart Python kurulumu
+pip install resmi-gazete-cli
+
+# 2. Veya izole CLI aracı olarak çalıştırma
+uv tool install resmi-gazete-cli
+# veya: pipx install resmi-gazete-cli
+
+# 3. macOS / Linux Homebrew Tap ile sistem genelinde kurulum
+brew tap atacanymc/tap
+brew install atacanymc/tap/resmi-gazete-cli
+
+# 4. Sürüm doğrulaması
+resmi-gazete-cli --version</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLI & Interactive Command Generator Section -->
+    <section id="cli" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Terminal Arayüzü</div>
+          <h2 class="section-title">CLI Kılavuzu ve Komut Sihirbazı</h2>
+          <p class="section-description">
+            Aşağıdaki form üzerinden parametreleri belirleyin; sözdizimi doğrulanmış terminal komutunu anında kopyalayarak çalıştırın.
+          </p>
+        </div>
+
+        <div class="playground-grid">
+          <div class="playground-controls">
+            <div class="form-group">
+              <label for="pg-command-type" class="form-label">Komut Türü</label>
+              <select id="pg-command-type" class="form-select">
+                <option value="daily">daily (Günlük Gazete Sayısı Listeleme)</option>
+                <option value="search">search (Arşivde Mevzuat ve Karar Arama)</option>
+              </select>
+            </div>
+
+            <!-- Daily Specific Options -->
+            <div id="pg-daily-options">
+              <div class="form-group">
+                <label for="pg-daily-date" class="form-label">Tarih (GG.AA.YYYY - Boş bırakılırsa bugün)</label>
+                <input type="text" id="pg-daily-date" class="form-input pg-input" placeholder="ör. 15.11.2024">
+              </div>
+              <div class="form-group">
+                <label for="pg-daily-category" class="form-label">Kategori Filtresi (İsteğe bağlı)</label>
+                <input type="text" id="pg-daily-category" class="form-input pg-input" placeholder="ör. YARGI BÖLÜMÜ">
+              </div>
+              <div class="form-group">
+                <label class="form-checkbox-label">
+                  <input type="checkbox" id="pg-daily-mukerrer" class="pg-input">
+                  <span>Mükerrer Sayıyı Getir (-m)</span>
+                </label>
+              </div>
+              <div class="form-group">
+                <label class="form-checkbox-label">
+                  <input type="checkbox" id="pg-daily-json" class="pg-input">
+                  <span>JSON Formatında Çıktı Üret (--json-output)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Search Specific Options -->
+            <div id="pg-search-options" hidden>
+              <div class="form-group">
+                <label for="pg-search-kelime" class="form-label">Aranacak Kelime / İfade</label>
+                <input type="text" id="pg-search-kelime" class="form-input pg-input" placeholder="ör. yapay zeka">
+              </div>
+              <div class="form-group">
+                <label for="pg-search-tur" class="form-label">Mevzuat Türü Kısayolu</label>
+                <select id="pg-search-tur" class="form-select pg-input">
+                  <option value="">Tüm Mevzuat Türleri</option>
+                  <option value="kanun">Kanunlar (kanun / 1)</option>
+                  <option value="cb-karar">Cumhurbaşkanı Kararları (cb-karar / 3)</option>
+                  <option value="yonetmelik">Yönetmelikler (yonetmelik / 4)</option>
+                  <option value="teblig">Tebliğler (teblig / 5)</option>
+                  <option value="aym">Anayasa Mahkemesi Kararları (aym / 7)</option>
+                  <option value="danistay">Danıştay Kararları (danistay / 8)</option>
+                  <option value="yargitay">Yargıtay Kararları (yargitay / 9)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pg-search-baslangic" class="form-label">Başlangıç Tarihi</label>
+                <input type="text" id="pg-search-baslangic" class="form-input pg-input" placeholder="01.01.2024">
+              </div>
+              <div class="form-group">
+                <label for="pg-search-bitis" class="form-label">Bitiş Tarihi</label>
+                <input type="text" id="pg-search-bitis" class="form-input pg-input" placeholder="31.12.2024">
+              </div>
+              <div class="form-group">
+                <label for="pg-search-format" class="form-label">Çıktı Biçimi</label>
+                <select id="pg-search-format" class="form-select pg-input">
+                  <option value="table">Renkli Rich Tablosu (table)</option>
+                  <option value="json">Yapılandırılmış JSON Dizisi (json)</option>
+                  <option value="md">Markdown Tablosu (md)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="preview-panel">
+            <div class="preview-header">
+              <span class="preview-title">Üretilen Terminal Komutu</span>
+              <button type="button" class="copy-btn" id="pg-copy-btn">Kopyala</button>
+            </div>
+            <div class="preview-code-box" id="pg-command-preview">resmi-gazete-cli daily</div>
+          </div>
+        </div>
+
+        <!-- CLI Parameters Table -->
+        <div class="table-wrapper" style="margin-top: 32px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Komut</th>
+                <th>Parametre</th>
+                <th>Kısa Ad</th>
+                <th>Varsayılan</th>
+                <th>Açıklama</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>daily</code></td>
+                <td><code>--date</code></td>
+                <td><code>-d</code></td>
+                <td>Bugün</td>
+                <td>Sorgulanacak gazete tarihi (GG.AA.YYYY veya YYYY-MM-DD).</td>
+              </tr>
+              <tr>
+                <td><code>daily</code></td>
+                <td><code>--mukerrer</code></td>
+                <td><code>-m</code></td>
+                <td>False</td>
+                <td>Varsa günün mükerrer sayısını çeker.</td>
+              </tr>
+              <tr>
+                <td><code>daily</code></td>
+                <td><code>--category</code></td>
+                <td><code>-c</code></td>
+                <td>Yok</td>
+                <td>Yürütme, Yargı veya İlân gibi bölümleri yerel olarak filtreler.</td>
+              </tr>
+              <tr>
+                <td><code>daily</code></td>
+                <td><code>--json-output</code></td>
+                <td><code>-j</code></td>
+                <td>False</td>
+                <td>Çıktıyı boru hatları için doğrudan JSON formatında üretir.</td>
+              </tr>
+              <tr>
+                <td><code>search</code></td>
+                <td><code>--kelime</code></td>
+                <td><code>-k</code></td>
+                <td>""</td>
+                <td>Arama yapılacak anahtar kelime veya metin öbeği.</td>
+              </tr>
+              <tr>
+                <td><code>search</code></td>
+                <td><code>--mevzuat-turu</code></td>
+                <td><code>-t</code></td>
+                <td>Yok</td>
+                <td>Tür kısayolu (kanun, cb-karar, yonetmelik, teblig, aym, danistay, yargitay).</td>
+              </tr>
+              <tr>
+                <td><code>search</code></td>
+                <td><code>--format</code></td>
+                <td><code>-f</code></td>
+                <td>table</td>
+                <td>Çıktı formatı: <code>table</code>, <code>json</code>, <code>md</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- FastMCP Integration Section -->
+    <section id="mcp" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Model Context Protocol</div>
+          <h2 class="section-title">FastMCP ile LLM Entegrasyonu</h2>
+          <p class="section-description">
+            Anthropic MCP standardında çalışan stdio sunucusu. Claude Desktop ve Cursor IDE ile tam uyumludur.
+          </p>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Araç Adı (Tool)</th>
+                <th>Parametreler</th>
+                <th>Dönüş Tipi</th>
+                <th>İşlev ve Özel Davranış</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>get_todays_gazette</code></td>
+                <td>Yok</td>
+                <td><code>dict (GazetteDay)</code></td>
+                <td>Bugünün gazete sayısını ve kategorize edilmiş maddelerini JSON olarak döndürür.</td>
+              </tr>
+              <tr>
+                <td><code>get_gazette_by_date</code></td>
+                <td><code>tarih (str)</code>, <code>mukerrer (bool)</code></td>
+                <td><code>dict (GazetteDay)</code></td>
+                <td>Belirtilen tarihteki (ör. 15.11.2024) Resmî Gazete içeriğini çeker.</td>
+              </tr>
+              <tr>
+                <td><code>search_gazette</code></td>
+                <td><code>kelime</code>, <code>mevzuat_turu</code>, <code>page</code> vb.</td>
+                <td><code>dict (SearchResponse)</code></td>
+                <td>Resmî Gazete arşivinde parametrik arama yürütür.</td>
+              </tr>
+              <tr>
+                <td><code>get_document_content</code></td>
+                <td><code>url (str)</code></td>
+                <td><code>str (Mevzuat Metni)</code></td>
+                <td>Mevzuatın tam metnini indirir, windows-1254 kodlamasını düzeltir ve HTML temizliği yapar.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 style="margin-top: 36px; margin-bottom: 12px; font-size: 1.25rem;">İstemci Yapılandırma Dosyaları</h3>
+
+        <!-- Claude Desktop Config -->
+        <div class="code-card">
+          <div class="code-card-header">
+            <span class="code-card-title">Claude Desktop · claude_desktop_config.json</span>
+            <button type="button" class="copy-btn" data-copy-target="code-claude-mcp">Kopyala</button>
+          </div>
+          <pre id="code-claude-mcp"><code>{
+  "mcpServers": {
+    "resmi-gazete": {
+      "command": "resmi-gazete-mcp",
+      "args": []
+    }
+  }
+}</code></pre>
+        </div>
+
+        <!-- Cursor Config -->
+        <div class="code-card">
+          <div class="code-card-header">
+            <span class="code-card-title">Cursor IDE · Features / MCP Ayarları</span>
+            <button type="button" class="copy-btn" data-copy-target="code-cursor-mcp">Kopyala</button>
+          </div>
+          <pre id="code-cursor-mcp"><code>{
+  "name": "resmi-gazete",
+  "type": "command",
+  "command": "resmi-gazete-mcp"
+}</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Python SDK Section -->
+    <section id="python-sdk" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Python SDK</div>
+          <h2 class="section-title">Asenkron Python İstemcisi ve Veri Modelleri</h2>
+          <p class="section-description">
+            Tip güvenli Pydantic V2 modelleri ve HTTP/2 bağlantı yönetimi ile projelerinize doğrudan entegre edin.
+          </p>
+        </div>
+
+        <div class="code-card">
+          <div class="code-card-header">
+            <span class="code-card-title">Python 3.10+ · ResmiGazeteClient Kullanımı</span>
+            <button type="button" class="copy-btn" data-copy-target="code-python-sdk">Kopyala</button>
+          </div>
+          <pre id="code-python-sdk"><code>import asyncio
+from resmi_gazete_cli import ResmiGazeteClient
+from resmi_gazete_cli.scraper.models import SearchCriteria
+
+async def main():
+    async with ResmiGazeteClient() as client:
+        # 1. Günün gazetesini çekme
+        gazette = await client.get_todays_gazette()
+        print(f"Gazete Sayısı: {gazette.number}, Tarih: {gazette.date}")
+
+        # 2. Parametrik arama yapma
+        criteria = SearchCriteria(
+            kelime="yapay zeka",
+            mevzuat_turu="4",  # Yönetmelikler
+            page=1,
+            page_size=5
+        )
+        results = await client.search(criteria)
+        print(f"Toplam Sonuç: {results.records_total}")
+        for item in results.data:
+            print(f"- [{item.resmi_gazete_tarihi}] {item.baslik}")
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Hata Sınıfı</th>
+                <th>Üst Sınıf</th>
+                <th>Tetiklenme Durumu</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>ResmiGazeteError</code></td>
+                <td><code>Exception</code></td>
+                <td>Kütüphaneden fırlatılan tüm hataların temel sınıfı.</td>
+              </tr>
+              <tr>
+                <td><code>NetworkError</code></td>
+                <td><code>ResmiGazeteError</code></td>
+                <td>Bağlantı zaman aşımı, DNS çözme hatası veya sunucu yanıt vermediğinde.</td>
+              </tr>
+              <tr>
+                <td><code>NotFoundError</code></td>
+                <td><code>ResmiGazeteError</code></td>
+                <td>Belirtilen tarihe ait Resmî Gazete sayısı yayımlanmamışsa veya 404 döndüğünde.</td>
+              </tr>
+              <tr>
+                <td><code>ParseError</code></td>
+                <td><code>ResmiGazeteError</code></td>
+                <td>HTML yapısı veya DataTables JSON yapısı beklenmeyen bir biçimde değiştiğinde.</td>
+              </tr>
+              <tr>
+                <td><code>SSRFError</code></td>
+                <td><code>ResmiGazeteError</code></td>
+                <td>İstek izin verilen resmi alan adları dışına veya özel ağ adreslerine yönlendiğinde.</td>
+              </tr>
+              <tr>
+                <td><code>ResponseTooLargeError</code></td>
+                <td><code>ResmiGazeteError</code></td>
+                <td>Sunucu yanıtı 10MB bellek güvenliği eşiğini aştığında (DoS koruması).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Security Section -->
+    <section id="guvenlik" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Güvenlik & Güvenilirlik</div>
+          <h2 class="section-title">Üretim Ortamı İçin Koruma Önlemleri</h2>
+          <p class="section-description">
+            Sistem harici kaynaklardan gelen girdilere ve sunucu manipülasyonlarına karşı çok katmanlı savunma uygular.
+          </p>
+        </div>
+
+        <div class="arch-grid">
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">SSRF Koruması</h3>
+            </div>
+            <p class="arch-card-desc">
+              Harici HTTP istekleri katı bir şekilde yalnızca <code>resmigazete.gov.tr</code> ve <code>mevzuat.gov.tr</code> alan adlarına izin verir. Loopback (127.0.0.1), yerel ağlar ve bulut metadata IP'leri (169.254.169.254) engellenir.
+            </p>
+            <div class="arch-card-meta">
+              Modül: <code>resmi_gazete_cli.scraper.security</code>
+            </div>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">DoS & Bellek Sınırı</h3>
+            </div>
+            <p class="arch-card-desc">
+              Gelen yanıt boyutları aktarım sırasında denetlenir; 10MB üzerindeki anormal gövdeler belleğe alınmadan <code>ResponseTooLargeError</code> ile sonlandırılır.
+            </p>
+            <div class="arch-card-meta">
+              Sınır: 10,485,760 Bayt (10 MB)
+            </div>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-header">
+              <h3 class="arch-card-title">Terminal Injection Koruması</h3>
+            </div>
+            <p class="arch-card-desc">
+              Resmî Gazete başlıklarındaki köşeli parantezler (<code>[...]</code>) terminal Rich markup ayrıştırıcısından önce <code>rich.markup.escape</code> ile kaçışlanır; terminal format bozulması engellenir.
+            </p>
+            <div class="arch-card-meta">
+              Modül: <code>resmi_gazete_cli.cli.main</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Technical FAQ Section -->
+    <section id="faq" class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-badge">Sıkça Sorulan Sorular</div>
+          <h2 class="section-title">Teknik ve Hukuki Ayrıntılar</h2>
+        </div>
+
+        <div class="faq-grid">
+          <div class="faq-card">
+            <h3 class="faq-question">Resmî Gazete verilerini çekmek için API anahtarı gerekiyor mu?</h3>
+            <p class="faq-answer">
+              Hayır. Resmî Gazete verileri kamuya açık resmî yayındır. Herhangi bir üyelik, kayıt veya API anahtarı gerektirmez.
+            </p>
+          </div>
+
+          <div class="faq-card">
+            <h3 class="faq-question">Eski tarihli HTML metinlerinde Türkçe karakterler bozuluyor mu?</h3>
+            <p class="faq-answer">
+              Hayır. <code>resmigazete.gov.tr</code> üzerindeki eski arşiv metinleri <code>windows-1254</code> karakter setiyle yayımlanmıştır. İstemci karakter setini otomatik tespit edip UTF-8'e dönüştürür.
+            </p>
+          </div>
+
+          <div class="faq-card">
+            <h3 class="faq-question">MCP sunucusu yerel makinede mi çalışır?</h3>
+            <p class="faq-answer">
+              Evet. FastMCP sunucusu <code>stdio</code> üzerinden yerel bir alt süreç olarak çalışır. Verileriniz üçüncü taraf bir bulut sunucusuna iletilmez.
+            </p>
+          </div>
+
+          <div class="faq-card">
+            <h3 class="faq-question">Mükerrer sayılar nasıl ayrıştırılır?</h3>
+            <p class="faq-answer">
+              Mükerrer sayılar Resmî Gazete sisteminde aynı gün içinde yayımlanan ek sayılardır. CLI'da <code>-m</code>, SDK ve MCP'de <code>mukerrer=True</code> bayrağı ile çekilir.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-copy">
+        <p>© 2026 Ata Can Yaymacı. Apache-2.0 Lisansı ile yayımlanmaktadır.</p>
+        <p style="font-size: 0.82rem; margin-top: 4px; color: var(--text-subtle);">
+          Bu proje T.C. Resmî Gazete resmi organlarına bağlı değildir; kamuya açık verileri işleyen açık kaynak geliştirici araç setidir.
+        </p>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="https://pypi.org/project/resmi-gazete-cli/" target="_blank" rel="noopener noreferrer">PyPI</a></li>
+        <li><a href="https://pypi.org/user/atacanymc/" target="_blank" rel="noopener noreferrer">Yazar Profili</a></li>
+        <li><a href="https://github.com/AtaCanYmc/resmi-gazete-cli" target="_blank" rel="noopener noreferrer">GitHub</a></li>
+        <li><a href="https://github.com/AtaCanYmc/homebrew-tap" target="_blank" rel="noopener noreferrer">Homebrew Tap</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

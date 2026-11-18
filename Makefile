@@ -1,4 +1,4 @@
-.PHONY: help install test lint build clean ci
+.PHONY: help install test lint build clean ci serve-docs
 
 PYTHON ?= $(shell if [ -f .venv/bin/python ]; then echo .venv/bin/python; else echo python3; fi)
 PIP ?= $(shell if [ -f .venv/bin/pip ]; then echo .venv/bin/pip; else echo pip; fi)
@@ -29,3 +29,8 @@ clean: ## Geçici dosyaları, derleme çıktılarını ve önbellekleri temizler
 	find . -type f -name "*.pyc" -delete
 
 ci: lint test build ## GitHub Actions CI adımlarının tamamını yerel ortamda koşturur
+
+serve-docs: ## Dokümantasyon web arayüzünü yerel HTTP sunucusunda sunar (http://localhost:8000)
+	@echo "Dokümantasyon arayüzü başlatılıyor: http://localhost:8000"
+	$(PYTHON) -m http.server --directory site 8000
+

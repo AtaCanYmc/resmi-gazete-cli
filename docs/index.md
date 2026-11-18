@@ -8,6 +8,7 @@ T.C. Resmî Gazete (`resmigazete.gov.tr`) üzerinde yayımlanan kanun, karar, y�
 
 ## Dokümantasyon Haritası
 
+- [Web Arayüzü & İnteraktif Dokümantasyon](https://atacanymc.github.io/resmi-gazete-cli/): Tarayıcı üzerinden görsel kılavuz ve CLI komut sihirbazı.
 - [CLI Kullanım Kılavuzu](cli.md): `daily` ve `search` komutları, filtreleme parametreleri, tablo/JSON/Markdown çıktı formatları.
 - [Model Context Protocol (MCP) Kılavuzu](mcp.md): FastMCP stdio sunucusu, araç tanımları (`tools`) ve LLM istemci yapılandırmaları.
 - [Python SDK ve API Referansı](sdk.md): `ResmiGazeteClient` sınıfı, Pydantic veri modelleri, hata hiyerarşisi ve asenkron kod örnekleri.

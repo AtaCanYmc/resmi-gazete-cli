@@ -38,7 +38,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/AtaCanYmc/resmi-gazete-cli"
-Documentation = "https://github.com/AtaCanYmc/resmi-gazete-cli#readme"
+Documentation = "https://atacanymc.github.io/resmi-gazete-cli/"
 Repository = "https://github.com/AtaCanYmc/resmi-gazete-cli.git"
 Issues = "https://github.com/AtaCanYmc/resmi-gazete-cli/issues"
 Changelog = "https://github.com/AtaCanYmc/resmi-gazete-cli/blob/main/CHANGELOG.md"

@@ -19,6 +19,9 @@
     <a href="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/ci.yml">
       <img src="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/ci.yml/badge.svg" alt="CI Durumu">
     </a>
+    <a href="https://atacanymc.github.io/resmi-gazete-cli/">
+      <img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg?logo=githubpages&logoColor=white" alt="Web Dokümantasyonu">
+    </a>
     <a href="https://pypi.org/user/atacanymc/">
       <img src="https://img.shields.io/badge/pypi-atacanymc-3775A9.svg?logo=pypi&logoColor=white" alt="PyPI Profil">
     </a>
@@ -69,6 +72,7 @@ Detaylı kullanım ve entegrasyon kılavuzları `docs/` dizini altında toplanm�
 
 | Doküman | Kapsam |
 | --- | --- |
+| [Web Arayüzü & Canlı Dokümantasyon](https://atacanymc.github.io/resmi-gazete-cli/) | Komut sihirbazı, interaktif mimari ve tarayıcı dostu kılavuz. |
 | [Genel Mimari ve Giriş](docs/index.md) | Sistem mimarisi, veri akış diyagramı ve genel yetenekler. |
 | [CLI Kullanım Kılavuzu](docs/cli.md) | `daily` ve `search` komutları, tüm parametreler, kısayollar ve çıkış kodları. |
 | [Model Context Protocol (MCP)](docs/mcp.md) | FastMCP araçları, Claude Desktop, Cursor ve VS Code yapılandırma rehberi. |
