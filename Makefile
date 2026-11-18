@@ -19,8 +19,9 @@ lint: ## Flake8 ile kod kalitesi ve sözdizimi denetimi yapar
 test: ## Tüm birim testlerini pytest ile çalıştırır
 	$(PYTHON) -m pytest -v
 
-build: ## Dağıtım paketlerini (sdist ve wheel) oluşturur
+build: ## Dağıtım paketlerini (sdist ve wheel) oluşturur ve twine ile doğrular
 	$(PYTHON) -m build
+	$(PYTHON) -m twine check --strict dist/*
 
 clean: ## Geçici dosyaları, derleme çıktılarını ve önbellekleri temizler
 	rm -rf build/ dist/ *.egg-info .pytest_cache .coverage
