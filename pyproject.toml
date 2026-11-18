@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "resmi-gazete-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "T.C. Resmi Gazete Karar, Kanun ve İlan Scraper, CLI ve MCP Sunucusu"
 readme = "README.md"
 requires-python = ">=3.10"
