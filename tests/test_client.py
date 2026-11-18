@@ -1,24 +1,161 @@
-from resmi_gazete_cli.scraper.models import GazetteItem, DailyGazette
+import re
+import pytest
+from unittest.mock import patch, AsyncMock
+import httpx
+
+from resmi_gazete_cli import __version__
+from resmi_gazete_cli.scraper.client import ResmiGazeteClient
 
 
-def test_gazette_models():
-    """Temel Pydantic veri modellerinin doğruluğunu test eder."""
-    item = GazetteItem(
-        tarih="18.11.2026",
-        sayi="32726",
-        kategori="Yürütme ve İdare",
-        baslik="Örnek Karar Başlığı",
-        link="https://resmigazete.gov.tr/eskiler/2026/11/20261118-1.pdf"
+def test_package_version():
+    """Paket sürümünün semver formatında olduğunu doğrular."""
+    assert __version__ is not None
+    assert re.match(r"^\d+\.\d+\.\d+", __version__)
+
+
+def test_client_initialization_default():
+    """İstemcinin varsayılan parametrelerle (timeout=30, verify=True, headers) oluşturulması."""
+    client = ResmiGazeteClient()
+    assert client.verify is True
+    assert client.timeout == 30
+    assert "User-Agent" in client.headers
+    assert "Accept" in client.headers
+    assert client.BASE_URL == "https://resmigazete.gov.tr"
+
+
+def test_client_initialization_custom():
+    """İstemcinin özel parametrelerle başlatılabilmesi."""
+    client = ResmiGazeteClient(timeout=10, verify=False)
+    assert client.verify is False
+    assert client.timeout == 10
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_success():
+    """Başarılı 200 OK yanıtı durumunda istemcinin işleyişi."""
+    client = ResmiGazeteClient(timeout=20, verify=True)
+    mock_response = httpx.Response(
+        200,
+        request=httpx.Request("GET", "https://resmigazete.gov.tr"),
+        text="<html><body>Resmi Gazete</body></html>"
     )
 
-    gazette = DailyGazette(
-        tarih="18.11.2026",
-        sayi="32726",
-        items=[item]
-    )
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
 
-    assert gazette.tarih == "18.11.2026"
-    assert gazette.sayi == "32726"
-    assert len(gazette.items) == 1
-    assert gazette.items[0].baslik == "Örnek Karar Başlığı"
-    assert gazette.error is None
+        gazette = await client.get_todays_gazette()
+
+        mock_client_cls.assert_called_once_with(
+            timeout=20,
+            headers=client.headers,
+            verify=True,
+            follow_redirects=True
+        )
+        assert gazette.error is None
+        assert isinstance(gazette.items, list)
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_timeout():
+    """Zaman aşımı (TimeoutException) hatasının düzgün yakalanıp modellenmesi."""
+    client = ResmiGazeteClient(timeout=5)
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.side_effect = httpx.TimeoutException("Connection timed out")
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_todays_gazette()
+
+        assert gazette.error is not None
+        assert "zaman aşımına uğradı (5s)" in gazette.error
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_404_not_found():
+    """404 Not Found durumunun kullanıcı dostu hata mesajına dönüştürülmesi."""
+    client = ResmiGazeteClient()
+    mock_request = httpx.Request("GET", "https://resmigazete.gov.tr")
+    mock_response = httpx.Response(404, request=mock_request)
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.side_effect = httpx.HTTPStatusError(
+            message="Client error '404 Not Found'",
+            request=mock_request,
+            response=mock_response
+        )
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_todays_gazette()
+
+        assert gazette.error is not None
+        assert "404 Not Found" in gazette.error
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_500_server_error():
+    """500 Internal Server Error durumunun hata mesajına dönüştürülmesi."""
+    client = ResmiGazeteClient()
+    mock_request = httpx.Request("GET", "https://resmigazete.gov.tr")
+    mock_response = httpx.Response(500, request=mock_request)
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.side_effect = httpx.HTTPStatusError(
+            message="Server error '500 Internal Server Error'",
+            request=mock_request,
+            response=mock_response
+        )
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_todays_gazette()
+
+        assert gazette.error is not None
+        assert "Sunucu hatası (500)" in gazette.error
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_request_error():
+    """Bağlantı ve ağ hatasının (RequestError) yakalanması."""
+    client = ResmiGazeteClient()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.side_effect = httpx.ConnectError("DNS resolution failed")
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_todays_gazette()
+
+        assert gazette.error is not None
+        assert "Bağlantı hatası oluştu" in gazette.error
+
+
+@pytest.mark.asyncio
+async def test_get_todays_gazette_unexpected_exception():
+    """Beklenmeyen genel bir istisnanın (Exception) yakalanması."""
+    client = ResmiGazeteClient()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.side_effect = RuntimeError("Memory corruption")
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_todays_gazette()
+
+        assert gazette.error is not None
+        assert "Beklenmeyen bir hata oluştu" in gazette.error

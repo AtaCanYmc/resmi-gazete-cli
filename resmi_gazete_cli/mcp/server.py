@@ -1,6 +1,9 @@
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.mcpserver import MCPServer
+except ImportError:  # pragma: no cover
+    from mcp.server.fastmcp import FastMCP as MCPServer
 
-mcp = FastMCP("Resmi Gazete MCP Sunucusu")
+mcp = MCPServer("Resmi Gazete MCP Sunucusu")
 
 
 def main():

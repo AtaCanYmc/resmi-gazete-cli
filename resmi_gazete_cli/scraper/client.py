@@ -1,6 +1,6 @@
 import logging
 import ssl
-from typing import Optional, Union, Dict, Any
+from typing import Union, Dict
 import httpx
 
 from .models import DailyGazette
