@@ -307,7 +307,8 @@ resmi-gazete-cli/
 │   │   ├── __init__.py
 │   │   ├── client.py                  # HTTP istemcisi ve hata yönetimi
 │   │   ├── models.py                  # Pydantic veri modelleri
-│   │   └── parser.py                  # HTML gazete ayrıştırıcısı
+│   │   ├── parser.py                  # HTML gazete ayrıştırıcısı
+│   │   └── security.py                # SSRF ve URL doğrulama güvenlik kontrolleri
 │   ├── cli/
 │   │   ├── __init__.py
 │   │   └── main.py                    # Click terminal komutları
@@ -320,7 +321,8 @@ resmi-gazete-cli/
     ├── test_client.py                 # İstemci ve HTTP mock testleri
     ├── test_mcp.py                    # FastMCP araç testleri
     ├── test_models.py                 # Pydantic model doğrulama testleri
-    └── test_parser.py                 # HTML parser ve normalizasyon testleri
+    ├── test_parser.py                 # HTML parser ve normalizasyon testleri
+    └── test_security.py               # SSRF, DoS ve enjeksiyon güvenlik testleri
 ```
 
 ---

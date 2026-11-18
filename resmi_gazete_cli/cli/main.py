@@ -5,6 +5,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+from rich.markup import escape
 
 from resmi_gazete_cli import __version__
 from resmi_gazete_cli.scraper import ResmiGazeteClient, SearchCriteria, SearchResponse
@@ -76,9 +77,10 @@ def render_search_markdown(response: SearchResponse) -> str:
 
 def render_search_table(response: SearchResponse, filter_desc: str) -> None:
     """Arama sonuçlarını Rich terminal tablosu olarak ekrana basar."""
+    safe_filter = escape(filter_desc)
     panel = Panel(
         f"[bold white]Resmi Gazete Arama Sonuçları[/bold white]\n"
-        f"[dim]Filtreler: {filter_desc}[/dim]\n"
+        f"[dim]Filtreler: {safe_filter}[/dim]\n"
         f"[green]Toplam Bulunan Kayıt: {response.total_count}[/green] [dim](Sayfa {response.page})[/dim]",
         border_style="cyan",
         expand=False
@@ -102,12 +104,12 @@ def render_search_table(response: SearchResponse, filter_desc: str) -> None:
     for idx, item in enumerate(response.results, start=start_idx + 1):
         table.add_row(
             str(idx),
-            item.tarih or "-",
-            str(item.resmi_gazete_sayisi or "-"),
-            item.mevzuat_adi or "-",
-            item.kanun_karar_no or "-",
-            item.konu,
-            item.url or "-"
+            escape(item.tarih or "-"),
+            escape(str(item.resmi_gazete_sayisi or "-")),
+            escape(item.mevzuat_adi or "-"),
+            escape(item.kanun_karar_no or "-"),
+            escape(item.konu),
+            escape(item.url or "-")
         )
 
     console.print(table)
@@ -159,7 +161,7 @@ def daily(date, mukerrer, category, json_output):
         if json_output:
             console.print(json.dumps({"error": gazette.error}, ensure_ascii=False, indent=2))
         else:
-            console.print(f"[bold red]Hata:[/bold red] {gazette.error}")
+            console.print(f"[bold red]Hata:[/bold red] {escape(gazette.error)}")
         return
 
     items = gazette.items
@@ -189,8 +191,9 @@ def daily(date, mukerrer, category, json_output):
     if gazette.mukerrer:
         header_title += f" ({gazette.mukerrer_no or 'Mükerrer'})"
 
+    safe_header = escape(header_title)
     panel = Panel(
-        f"[bold white]{header_title}[/bold white]\n"
+        f"[bold white]{safe_header}[/bold white]\n"
         f"[dim]Listelenen Karar ve İlan Sayısı: {len(items)}[/dim]",
         border_style="blue",
         expand=False
@@ -212,9 +215,9 @@ def daily(date, mukerrer, category, json_output):
         link_display = item.link or "-"
         table.add_row(
             str(idx),
-            cat_display,
-            item.baslik,
-            link_display
+            escape(cat_display),
+            escape(item.baslik),
+            escape(link_display)
         )
 
     console.print(table)
@@ -265,7 +268,7 @@ def search(kelime, baslangic, bitis, sayi, mevzuat_no, mevzuat_turu, mukerrer, p
         if output_format.lower() == "json":
             console.print(json.dumps({"error": response.error}, ensure_ascii=False, indent=2))
         else:
-            console.print(f"[bold red]Arama Hatası:[/bold red] {response.error}")
+            console.print(f"[bold red]Arama Hatası:[/bold red] {escape(response.error)}")
         return
 
     if output_format.lower() == "json":

@@ -27,7 +27,7 @@ def parse_gazette_html(html_content: str, base_url: str = "https://resmigazete.g
 
     # Eğer header elemanı bulunamadıysa tüm sayfadaki başlık formatını ara
     if not header_text:
-        match_candidate = soup.find(string=re.compile(r"\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+\d{4}.*Sayılı"))
+        match_candidate = soup.find(string=re.compile(r"\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+\d{4}[^\n\r]{0,120}?Sayılı"))
         if match_candidate:
             header_text = str(match_candidate).strip()
 

@@ -8,6 +8,13 @@ from .models import (
     GazetteDocument,
 )
 from .parser import parse_gazette_html
+from .security import (
+    is_safe_url,
+    validate_target_url,
+    SSRFError,
+    ResponseTooLargeError,
+    MAX_RESPONSE_SIZE,
+)
 
 __all__ = [
     "ResmiGazeteClient",
@@ -20,4 +27,9 @@ __all__ = [
     "parse_gazette_html",
     "normalize_iso_date",
     "to_tr_date_format",
+    "is_safe_url",
+    "validate_target_url",
+    "SSRFError",
+    "ResponseTooLargeError",
+    "MAX_RESPONSE_SIZE",
 ]

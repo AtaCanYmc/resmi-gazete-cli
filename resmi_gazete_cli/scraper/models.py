@@ -28,15 +28,17 @@ class DailyGazette(BaseModel):
 class SearchCriteria(BaseModel):
     """Resmi Gazete /Home/Filter arama kriterleri."""
 
-    kelime: Optional[str] = Field("", description="Genel aranacak kelime veya kelime öbeği")
-    baslangic_tarihi: Optional[str] = Field("", description="Başlangıç Tarihi (GG.AA.YYYY veya YYYY-MM-DD)")
-    bitis_tarihi: Optional[str] = Field("", description="Bitiş Tarihi (GG.AA.YYYY veya YYYY-MM-DD)")
-    sayi: Optional[str] = Field("", description="Resmi Gazete sayısı")
-    mevzuat_sayisi: Optional[str] = Field("", description="Kanun/Karar/Mevzuat sayısı")
-    mukerrer: Optional[str] = Field("", description="Mükerrer durumu ('', 'HAYIR', 'EVET', 'EVET2' vb.)")
-    mevzuat_turu: Optional[str] = Field("", description="Mevzuat türü kodu (örn. '0010' KANUNLAR, '0500' TEBLİĞLER)")
-    kurum_kodu: Optional[str] = Field("", description="Kurum kodu")
-    page: int = Field(1, ge=1, description="Sayfa numarası (1-indexed)")
+    kelime: Optional[str] = Field("", max_length=250, description="Genel aranacak kelime veya kelime öbeği")
+    baslangic_tarihi: Optional[str] = Field("", max_length=30, description="Başlangıç Tarihi (GG.AA.YYYY veya YYYY-MM-DD)")
+    bitis_tarihi: Optional[str] = Field("", max_length=30, description="Bitiş Tarihi (GG.AA.YYYY veya YYYY-MM-DD)")
+    sayi: Optional[str] = Field("", max_length=50, description="Resmi Gazete sayısı")
+    mevzuat_sayisi: Optional[str] = Field("", max_length=50, description="Kanun/Karar/Mevzuat sayısı")
+    mukerrer: Optional[str] = Field("", max_length=50, description="Mükerrer durumu ('', 'HAYIR', 'EVET', 'EVET2' vb.)")
+    mevzuat_turu: Optional[str] = Field(
+        "", max_length=50, description="Mevzuat türü kodu (örn. '0010' KANUNLAR, '0500' TEBLİĞLER)"
+    )
+    kurum_kodu: Optional[str] = Field("", max_length=50, description="Kurum kodu")
+    page: int = Field(1, ge=1, le=10000, description="Sayfa numarası (1-indexed)")
     page_size: int = Field(10, ge=1, le=100, description="Sayfa başı kayıt sayısı")
 
 

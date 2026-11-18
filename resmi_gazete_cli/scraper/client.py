@@ -8,8 +8,27 @@ import httpx
 
 from .models import DailyGazette, SearchCriteria, SearchResponse, SearchResultItem, GazetteDocument
 from .parser import parse_gazette_html
+from .security import (
+    validate_target_url,
+    SSRFError,
+    ResponseTooLargeError,
+    MAX_RESPONSE_SIZE
+)
 
 logger = logging.getLogger(__name__)
+
+
+def check_response_size(response: httpx.Response, max_size: int = MAX_RESPONSE_SIZE) -> None:
+    """HTTP yanıtının bellek taşması sınırını aşıp aşmadığını denetler."""
+    content_length = response.headers.get("content-length")
+    if content_length and content_length.isdigit() and int(content_length) > max_size:
+        raise ResponseTooLargeError(
+            f"Sunucu yanıt boyutu ({int(content_length)} bayt) izin verilen sınırı ({max_size} bayt) aşıyor."
+        )
+    if len(response.content) > max_size:
+        raise ResponseTooLargeError(
+            f"İndirilen veri boyutu izin verilen sınırı ({max_size} bayt) aştı."
+        )
 
 
 def normalize_iso_date(target_date: Union[str, datetime.date]) -> str:
@@ -97,6 +116,80 @@ def parse_search_items(raw_items: List[Dict[str, Any]], base_url: str) -> List[S
     return results
 
 
+def _build_search_headers(base_headers: Dict[str, str], base_url: str) -> Dict[str, str]:
+    """Arama istekleri için gerekli özel HTTP başlıklarını hazırlar."""
+    headers = dict(base_headers)
+    headers.update({
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+        "Origin": base_url,
+        "Referer": f"{base_url}/",
+    })
+    return headers
+
+
+def _handle_search_error(e: Exception, timeout: int) -> SearchResponse:
+    """Arama işlemi istisnalarını uygun SearchResponse hatasına dönüştürür."""
+    if isinstance(e, SSRFError):
+        logger.warning(f"Arama SSRF engellendi: {e}")
+        return SearchResponse(error=f"Güvenlik hatası: {e}")
+    if isinstance(e, ResponseTooLargeError):
+        logger.warning(f"Arama aşırı büyük yanıt engellendi: {e}")
+        return SearchResponse(error=f"Güvenlik hatası: Yanıt boyutu sınırı aşıldı ({e})")
+    if isinstance(e, httpx.TimeoutException):
+        logger.error(f"Arama zaman aşımı: {e}")
+        return SearchResponse(error=f"Arama isteği zaman aşımına uğradı ({timeout}s): {str(e)}")
+    if isinstance(e, httpx.HTTPStatusError):
+        logger.error(f"Arama HTTP hatası ({e.response.status_code}): {e}")
+        return SearchResponse(error=f"Arama sunucu hatası ({e.response.status_code}): {str(e)}")
+    if isinstance(e, httpx.RequestError):
+        logger.error(f"Arama bağlantı hatası: {e}")
+        return SearchResponse(error=f"Arama bağlantı hatası: {str(e)}")
+    logger.error(f"Arama beklenmeyen hata: {e}")
+    return SearchResponse(error=f"Arama sırasında beklenmeyen bir hata oluştu: {str(e)}")
+
+
+def _handle_document_error(e: Exception, target_url: str, timeout: int) -> GazetteDocument:
+    """Doküman indirme istisnalarını uygun GazetteDocument hatasına dönüştürür."""
+    if isinstance(e, SSRFError):
+        logger.warning(f"Doküman yönlendirme SSRF engellendi: {e}")
+        return GazetteDocument(
+            url=target_url,
+            error=f"Güvenlik hatası: Yönlendirme güvenli olmayan bir hedefe yapıldı ({e})"
+        )
+    if isinstance(e, ResponseTooLargeError):
+        logger.warning(f"Doküman boyutu sınırı aşıldı: {e}")
+        return GazetteDocument(
+            url=target_url,
+            error=f"Güvenlik hatası: Doküman boyutu izin verilen sınırı aştı ({e})"
+        )
+    if isinstance(e, httpx.TimeoutException):
+        logger.error(f"Doküman zaman aşımı: {e}")
+        return GazetteDocument(
+            url=target_url,
+            error=f"Doküman indirme zaman aşımına uğradı ({timeout}s): {str(e)}"
+        )
+    if isinstance(e, httpx.HTTPStatusError):
+        logger.error(f"Doküman HTTP hatası ({e.response.status_code}): {e}")
+        return GazetteDocument(
+            url=target_url,
+            error=f"Doküman bulunamadı ({e.response.status_code}): {str(e)}"
+        )
+    logger.error(f"Doküman okuma hatası: {e}")
+    return GazetteDocument(
+        url=target_url,
+        error=f"Doküman okunurken bir hata oluştu: {str(e)}"
+    )
+
+
+def _clean_document_html(html_content: bytes) -> str:
+    """HTML belgesinden script/style etiketlerini ayıklar ve temiz metin döner."""
+    soup = BeautifulSoup(html_content, "html.parser", from_encoding="windows-1254")
+    for tag in soup(["script", "style"]):
+        tag.decompose()
+    return soup.get_text(separator="\n", strip=True)
+
+
 class ResmiGazeteClient:
     """T.C. Resmi Gazete (resmigazete.gov.tr) için HTTP istemcisi."""
 
@@ -106,10 +199,12 @@ class ResmiGazeteClient:
     def __init__(
         self,
         timeout: int = 30,
-        verify: Union[bool, str, ssl.SSLContext] = True
+        verify: Union[bool, str, ssl.SSLContext] = True,
+        max_response_size: int = MAX_RESPONSE_SIZE
     ):
         self.timeout = timeout
         self.verify = verify
+        self.max_response_size = max_response_size
         self.headers: Dict[str, str] = {
             "User-Agent": (
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -124,16 +219,27 @@ class ResmiGazeteClient:
     async def _fetch_and_parse(self, url: str) -> DailyGazette:
         """Belirtilen URL'ye istek atarak HTML yanıtını ayrıştırır ve hataları yönetir."""
         try:
+            validated_url = validate_target_url(url)
             async with httpx.AsyncClient(
                 timeout=self.timeout,
                 headers=self.headers,
                 verify=self.verify,
                 follow_redirects=True
             ) as client:
-                response = await client.get(url)
+                response = await client.get(validated_url)
+                for redirect_resp in response.history:
+                    validate_target_url(str(redirect_resp.url))
+                validate_target_url(str(response.url))
+                check_response_size(response, self.max_response_size)
                 response.raise_for_status()
                 return parse_gazette_html(response.text, base_url=self.BASE_URL)
 
+        except SSRFError as e:
+            logger.warning(f"SSRF engellendi: {e}")
+            return DailyGazette(error=f"Güvenlik hatası: İzin verilmeyen URL ({e})")
+        except ResponseTooLargeError as e:
+            logger.warning(f"Aşırı büyük yanıt engellendi: {e}")
+            return DailyGazette(error=f"Güvenlik hatası: Yanıt boyutu sınırı aşıldı ({e})")
         except httpx.TimeoutException as e:
             logger.error(f"Zaman aşımı hatası: {e}")
             return DailyGazette(error=f"İstek zaman aşımına uğradı ({self.timeout}s): {str(e)}")
@@ -166,7 +272,11 @@ class ResmiGazeteClient:
 
         url = f"{self.BASE_URL}/fihrist?tarih={iso_date}"
         if mukerrer is not None:
-            url += f"&mukerrer={mukerrer}"
+            try:
+                mukerrer_int = int(mukerrer)
+                url += f"&mukerrer={mukerrer_int}"
+            except (ValueError, TypeError):
+                return DailyGazette(error="Geçersiz mükerrer parametresi. Tamsayı olmalıdır.")
 
         gazette = await self._fetch_and_parse(url)
 
@@ -184,22 +294,21 @@ class ResmiGazeteClient:
         except Exception as e:
             return SearchResponse(error=f"Arama parametresi hatası: {e}")
 
-        search_headers = dict(self.headers)
-        search_headers.update({
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest",
-            "Origin": self.BASE_URL,
-            "Referer": f"{self.BASE_URL}/",
-        })
+        search_headers = _build_search_headers(self.headers, self.BASE_URL)
 
         try:
+            validated_endpoint = validate_target_url(self.FILTER_ENDPOINT)
             async with httpx.AsyncClient(
                 timeout=self.timeout,
                 headers=search_headers,
                 verify=self.verify,
                 follow_redirects=True
             ) as client:
-                response = await client.post(self.FILTER_ENDPOINT, json=payload)
+                response = await client.post(validated_endpoint, json=payload)
+                for redirect_resp in response.history:
+                    validate_target_url(str(redirect_resp.url))
+                validate_target_url(str(response.url))
+                check_response_size(response, self.max_response_size)
                 response.raise_for_status()
 
                 data = response.json()
@@ -212,23 +321,20 @@ class ResmiGazeteClient:
                     page_size=criteria.page_size,
                     results=results
                 )
-
-        except httpx.TimeoutException as e:
-            logger.error(f"Arama zaman aşımı: {e}")
-            return SearchResponse(error=f"Arama isteği zaman aşımına uğradı ({self.timeout}s): {str(e)}")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Arama HTTP hatası ({e.response.status_code}): {e}")
-            return SearchResponse(error=f"Arama sunucu hatası ({e.response.status_code}): {str(e)}")
-        except httpx.RequestError as e:
-            logger.error(f"Arama bağlantı hatası: {e}")
-            return SearchResponse(error=f"Arama bağlantı hatası: {str(e)}")
         except Exception as e:
-            logger.error(f"Arama beklenmeyen hata: {e}")
-            return SearchResponse(error=f"Arama sırasında beklenmeyen bir hata oluştu: {str(e)}")
+            return _handle_search_error(e, self.timeout)
 
     async def get_document_content(self, url: str) -> GazetteDocument:
         """Verilen Resmi Gazete doküman URL'sinden (HTM/HTML) metin içeriğini çeker."""
-        target_url = url if url.startswith("http") else urljoin(self.BASE_URL, url)
+        raw_target = url if url.startswith("http") else urljoin(self.BASE_URL, url)
+        try:
+            target_url = validate_target_url(raw_target)
+        except SSRFError as e:
+            logger.warning(f"Doküman SSRF engellendi: {e}")
+            return GazetteDocument(
+                url=url,
+                error=f"Güvenlik hatası: İzin verilmeyen veya güvensiz URL ({e})"
+            )
 
         if target_url.lower().endswith(".pdf"):
             return GazetteDocument(
@@ -248,34 +354,17 @@ class ResmiGazeteClient:
                 follow_redirects=True
             ) as client:
                 response = await client.get(target_url)
+                for redirect_resp in response.history:
+                    validate_target_url(str(redirect_resp.url))
+                validate_target_url(str(response.url))
+                check_response_size(response, self.max_response_size)
                 response.raise_for_status()
 
-                soup = BeautifulSoup(response.content, "html.parser", from_encoding="windows-1254")
-                for tag in soup(["script", "style"]):
-                    tag.decompose()
-
-                text = soup.get_text(separator="\n", strip=True)
+                text = _clean_document_html(response.content)
                 return GazetteDocument(
                     url=str(response.url),
                     content_type="text/html",
                     icerik=text
                 )
-
-        except httpx.TimeoutException as e:
-            logger.error(f"Doküman zaman aşımı: {e}")
-            return GazetteDocument(
-                url=target_url,
-                error=f"Doküman indirme zaman aşımına uğradı ({self.timeout}s): {str(e)}"
-            )
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Doküman HTTP hatası ({e.response.status_code}): {e}")
-            return GazetteDocument(
-                url=target_url,
-                error=f"Doküman bulunamadı ({e.response.status_code}): {str(e)}"
-            )
         except Exception as e:
-            logger.error(f"Doküman okuma hatası: {e}")
-            return GazetteDocument(
-                url=target_url,
-                error=f"Doküman okunurken bir hata oluştu: {str(e)}"
-            )
+            return _handle_document_error(e, target_url, self.timeout)
