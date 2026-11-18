@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.2](https://github.com/AtaCanYmc/resmi-gazete-cli/compare/v0.1.1...v0.1.2) (2026-11-18)
+
+
+### Features
+
+* add Homebrew installation instructions and formula for resmi-gazete-cli ([311d173](https://github.com/AtaCanYmc/resmi-gazete-cli/commit/311d1736be5fb4fce1adf402d9b0c4595d19d0e1))
+* enhance build process with Twine validation and update release workflow ([7c8d640](https://github.com/AtaCanYmc/resmi-gazete-cli/commit/7c8d6405548af19cb0f8295f50fd4889cb754233))
+* update installation instructions and add project metadata ([ea07afc](https://github.com/AtaCanYmc/resmi-gazete-cli/commit/ea07afcbfae746fa80e5c64fa34e97efe794d475))
+
 ## [0.1.1](https://github.com/AtaCanYmc/resmi-gazete-cli/compare/v0.1.0...v0.1.1) (2026-11-18)
 
 
