@@ -63,10 +63,18 @@ flowchart TD
 
 ## Hızlı Başlangıç
 
-Sanal ortamınızı etkinleştirdikten sonra aracı yükleyin:
+Paketi doğrudan [PyPI](https://pypi.org/project/resmi-gazete-cli/) üzerinden yükleyin:
 
 ```bash
-pip install -e .
+pip install resmi-gazete-cli
+```
+
+Veya izole bir terminal aracı olarak çalıştırmak için:
+
+```bash
+uv tool install resmi-gazete-cli
+# veya
+pipx install resmi-gazete-cli
 ```
 
 Bugünün Resmî Gazete içeriğini terminalde görüntüleyin:

@@ -7,11 +7,20 @@
   </p>
 
   <p>
+    <a href="https://pypi.org/project/resmi-gazete-cli/">
+      <img src="https://img.shields.io/pypi/v/resmi-gazete-cli.svg?color=blue&logo=pypi&logoColor=white" alt="PyPI Sürümü">
+    </a>
+    <a href="https://pypi.org/project/resmi-gazete-cli/">
+      <img src="https://img.shields.io/pypi/pyversions/resmi-gazete-cli.svg?logo=python&logoColor=white" alt="Python Sürümleri">
+    </a>
+    <a href="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/release-please.yml">
+      <img src="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/release-please.yml/badge.svg" alt="Release Durumu">
+    </a>
     <a href="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/ci.yml">
       <img src="https://github.com/AtaCanYmc/resmi-gazete-cli/actions/workflows/ci.yml/badge.svg" alt="CI Durumu">
     </a>
-    <a href="https://pypi.org/project/resmi-gazete-cli/">
-      <img src="https://img.shields.io/badge/python-3.10%2B-blue.svg?logo=python&logoColor=white" alt="Python Sürümleri">
+    <a href="https://pypi.org/user/atacanymc/">
+      <img src="https://img.shields.io/badge/pypi-atacanymc-3775A9.svg?logo=pypi&logoColor=white" alt="PyPI Profil">
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Lisans">
@@ -99,7 +108,27 @@ flowchart TD
 
 ## Kurulum
 
-Projeyi doğrudan GitHub üzerinden yerel ortamınıza kurabilirsiniz:
+### 1. PyPI Üzerinden Kurulum (Önerilen)
+
+Paketi doğrudan [PyPI](https://pypi.org/project/resmi-gazete-cli/) üzerinden yükleyebilirsiniz:
+
+```bash
+pip install resmi-gazete-cli
+```
+
+İzole bir CLI aracı olarak çalıştırmak için `uv` veya `pipx` kullanabilirsiniz:
+
+```bash
+# uv ile
+uv tool install resmi-gazete-cli
+
+# veya pipx ile
+pipx install resmi-gazete-cli
+```
+
+### 2. Kaynak Koddan Kurulum (Geliştirici Modu)
+
+Projeye katkı sağlamak veya yerel olarak derlemek için:
 
 ```bash
 # Depoyu klonlayın
