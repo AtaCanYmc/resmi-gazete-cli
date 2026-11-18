@@ -22,6 +22,10 @@
         {
           "type": "generic",
           "path": "Formula/resmi-gazete-cli.rb"
+        },
+        {
+          "type": "generic",
+          "path": "site/index.html"
         }
       ],
       "changelog-sections": [
