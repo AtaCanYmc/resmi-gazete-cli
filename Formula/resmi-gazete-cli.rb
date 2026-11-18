@@ -4,7 +4,7 @@ class ResmiGazeteCli < Formula
   desc "T.C. Resmi Gazete Karar, Kanun ve İlan Scraper, CLI ve MCP Sunucusu"
   homepage "https://github.com/AtaCanYmc/resmi-gazete-cli"
   url "https://github.com/AtaCanYmc/resmi-gazete-cli/archive/refs/tags/v0.1.2.tar.gz" # x-release-please-version
-  sha256 "a45c44e9748afbd09f906e2df755ad7f423fa07112657517f9ce9f469c285127"
+  sha256 "1eeaa85e149f5128ba519a23bffb1af628a83e22337d4b578264e19a1a70aea6"
   license "Apache-2.0"
   head "https://github.com/AtaCanYmc/resmi-gazete-cli.git", branch: "main"
 
