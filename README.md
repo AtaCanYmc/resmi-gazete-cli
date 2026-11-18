@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="docs/assets/logo.svg" alt="Resmi Gazete CLI Logo" width="160" height="160" />
   <h1>Resmi Gazete CLI</h1>
 
   <p>
@@ -23,6 +24,7 @@
 ## İçindekiler
 
 - [Genel Bakış](#genel-bakış)
+- [Dokümantasyon](#dokümantasyon)
 - [Mimari](#mimari)
 - [Kurulum](#kurulum)
 - [Hızlı Başlangıç](#hızlı-başlangıç)
@@ -46,6 +48,19 @@
 1. **Python SDK:** `httpx` ve `pydantic` tabanlı, TLS doğrulamalı asenkron HTTP istemcisi.
 2. **Terminal Arayüzü (CLI):** `click` ve `rich` tabanlı, formatlanmış konsol çıktısı veren komut satırı aracı.
 3. **Model Context Protocol (MCP) Sunucusu:** LLM ajanlarının (Claude Desktop, Cursor vb.) günün gazetesini ve geçmiş sayıları doğrudan sorgulayabilmesini sağlayan `FastMCP` stdio sunucusu.
+
+---
+
+## Dokümantasyon
+
+Detaylı kullanım ve entegrasyon kılavuzları `docs/` dizini altında toplanmıştır:
+
+| Doküman | Kapsam |
+| --- | --- |
+| [Genel Mimari ve Giriş](docs/index.md) | Sistem mimarisi, veri akış diyagramı ve genel yetenekler. |
+| [CLI Kullanım Kılavuzu](docs/cli.md) | `daily` ve `search` komutları, tüm parametreler, kısayollar ve çıkış kodları. |
+| [Model Context Protocol (MCP)](docs/mcp.md) | FastMCP araçları, Claude Desktop, Cursor ve VS Code yapılandırma rehberi. |
+| [Python SDK & API Referansı](docs/sdk.md) | `ResmiGazeteClient` API'si, Pydantic modelleri ve asenkron kod tarifleri. |
 
 ---
 
@@ -238,16 +253,14 @@ from resmi_gazete_cli import ResmiGazeteClient
 
 
 async def main():
-    client = ResmiGazeteClient()
-    gazette = await client.get_todays_gazette()
+    async with ResmiGazeteClient() as client:
+        gazette = await client.get_todays_gazette()
+        print(f"Tarih: {gazette.date}, Sayı: {gazette.number}")
 
-    if gazette.error:
-        print(f"Hata: {gazette.error}")
-        return
-
-    print(f"Tarih: {gazette.tarih}, Sayı: {gazette.sayi}")
-    for item in gazette.items:
-        print(f"[{item.kategori}] {item.baslik} -> {item.link}")
+        for category in gazette.categories:
+            print(f"\n## {category.main_category}")
+            for item in category.items:
+                print(f"  - {item.title} -> {item.url}")
 
 
 if __name__ == "__main__":
@@ -261,7 +274,8 @@ if __name__ == "__main__":
 ```text
 resmi-gazete-cli/
 ├── pyproject.toml                     # Hatchling derleme ve bağımlılık manifestosu
-├── README.md                          # Dokümantasyon
+├── Makefile                           # Test, lint ve derleme otomasyon görevleri
+├── README.md                          # Temel dokümantasyon ve vitrin
 ├── CONTRIBUTING.md                    # Geliştirici katkı kuralları
 ├── SECURITY.md                        # Güvenlik politikası ve bildirim SLA'sı
 ├── ROADMAP.md                         # Sürüm kilometre taşları
@@ -272,6 +286,13 @@ resmi-gazete-cli/
 ├── .flake8                            # Python linter kuralları
 ├── release-please-config.json         # Otomatik sürümleme yapılandırması
 ├── .release-please-manifest.json      # Sürüm takip manifestosu
+├── docs/                              # Detaylı teknik kılavuzlar
+│   ├── index.md                       # Dokümantasyon indeksi ve sistem mimarisi
+│   ├── cli.md                         # CLI komut referansı (daily, search)
+│   ├── mcp.md                         # Model Context Protocol ve LLM entegrasyonu
+│   ├── sdk.md                         # Python SDK referansı ve modeller
+│   └── assets/
+│       └── logo.svg                   # Vektörel kurumsal logo
 ├── .github/
 │   ├── CODEOWNERS                     # PR otomatik denetçi atamaları
 │   ├── dependabot.yml                 # Bağımlılık güncelleme planlayıcısı
@@ -285,7 +306,8 @@ resmi-gazete-cli/
 │   ├── scraper/
 │   │   ├── __init__.py
 │   │   ├── client.py                  # HTTP istemcisi ve hata yönetimi
-│   │   └── models.py                  # Pydantic veri modelleri
+│   │   ├── models.py                  # Pydantic veri modelleri
+│   │   └── parser.py                  # HTML gazete ayrıştırıcısı
 │   ├── cli/
 │   │   ├── __init__.py
 │   │   └── main.py                    # Click terminal komutları
@@ -294,7 +316,11 @@ resmi-gazete-cli/
 │       └── server.py                  # FastMCP stdio sunucusu
 └── tests/
     ├── __init__.py
-    └── test_client.py                 # İstemci ve ayrıştırıcı birim testleri
+    ├── test_cli.py                    # CLI komut testleri
+    ├── test_client.py                 # İstemci ve HTTP mock testleri
+    ├── test_mcp.py                    # FastMCP araç testleri
+    ├── test_models.py                 # Pydantic model doğrulama testleri
+    └── test_parser.py                 # HTML parser ve normalizasyon testleri
 ```
 
 ---
