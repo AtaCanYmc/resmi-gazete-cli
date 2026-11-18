@@ -63,6 +63,15 @@ flowchart TD
 
 ## Hızlı Başlangıç
 
+### Homebrew ile (macOS & Linux)
+
+```bash
+brew tap AtaCanYmc/resmi-gazete-cli https://github.com/AtaCanYmc/resmi-gazete-cli.git
+brew install resmi-gazete-cli
+```
+
+### PyPI ile
+
 Paketi doğrudan [PyPI](https://pypi.org/project/resmi-gazete-cli/) üzerinden yükleyin:
 
 ```bash

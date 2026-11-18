@@ -22,6 +22,9 @@
     <a href="https://pypi.org/user/atacanymc/">
       <img src="https://img.shields.io/badge/pypi-atacanymc-3775A9.svg?logo=pypi&logoColor=white" alt="PyPI Profil">
     </a>
+    <a href="#1-homebrew-ile-kurulum-macos--linux">
+      <img src="https://img.shields.io/badge/homebrew-tap-FBB040.svg?logo=homebrew&logoColor=white" alt="Homebrew Tap">
+    </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="Lisans">
     </a>
@@ -108,7 +111,24 @@ flowchart TD
 
 ## Kurulum
 
-### 1. PyPI Üzerinden Kurulum (Önerilen)
+### 1. Homebrew ile Kurulum (macOS & Linux)
+
+Homebrew kullanıcıları tek satırla tap ekleyerek aracı kurabilir:
+
+```bash
+# Depoyu tap olarak ekleyin ve kurun
+brew tap AtaCanYmc/resmi-gazete-cli https://github.com/AtaCanYmc/resmi-gazete-cli.git
+brew install resmi-gazete-cli
+```
+
+Veya `AtaCanYmc/homebrew-tap` üzerinden:
+
+```bash
+brew tap AtaCanYmc/tap
+brew install resmi-gazete-cli
+```
+
+### 2. PyPI Üzerinden Kurulum (Önerilen)
 
 Paketi doğrudan [PyPI](https://pypi.org/project/resmi-gazete-cli/) üzerinden yükleyebilirsiniz:
 
@@ -126,7 +146,7 @@ uv tool install resmi-gazete-cli
 pipx install resmi-gazete-cli
 ```
 
-### 2. Kaynak Koddan Kurulum (Geliştirici Modu)
+### 3. Kaynak Koddan Kurulum (Geliştirici Modu)
 
 Projeye katkı sağlamak veya yerel olarak derlemek için:
 
@@ -315,6 +335,8 @@ resmi-gazete-cli/
 ├── .flake8                            # Python linter kuralları
 ├── release-please-config.json         # Otomatik sürümleme yapılandırması
 ├── .release-please-manifest.json      # Sürüm takip manifestosu
+├── Formula/                           # Homebrew tap formülü
+│   └── resmi-gazete-cli.rb            # Homebrew kurulum reçetesi
 ├── docs/                              # Detaylı teknik kılavuzlar
 │   ├── index.md                       # Dokümantasyon indeksi ve sistem mimarisi
 │   ├── cli.md                         # CLI komut referansı (daily, search)

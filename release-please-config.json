@@ -18,6 +18,10 @@
         {
           "type": "generic",
           "path": ".github/ISSUE_TEMPLATE/bug_report.yml"
+        },
+        {
+          "type": "generic",
+          "path": "Formula/resmi-gazete-cli.rb"
         }
       ],
       "changelog-sections": [
