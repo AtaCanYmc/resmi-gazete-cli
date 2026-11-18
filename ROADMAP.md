@@ -24,12 +24,12 @@ Bu belge, `resmi-gazete-cli` projesinin sürüm hedeflerini ve planlanan teknik 
 
 ---
 
-## v0.3.0: Arama Endpoint'i ve Filtreleme
+## v0.3.0: Arama Endpoint'i ve Filtreleme (Tamamlandı)
 
-- [ ] `resmigazete.gov.tr/Home/Filter` endpoint'ine uygun arama isteği parametrelerinin `SearchCriteria` modeline bağlanması.
-- [ ] Kelime, tarih aralığı, sayı ve mevzuat türüne göre arama desteği.
-- [ ] `resmi-gazete-cli search` komutunun terminale kazandırılması.
-- [ ] Arama sonuçlarının JSON veya Markdown formatında dışa aktarımı (`--format json/md`).
+- [x] `resmigazete.gov.tr/Home/Filter` endpoint'ine uygun arama isteği parametrelerinin `SearchCriteria` modeline bağlanması.
+- [x] Kelime, tarih aralığı, sayı, mevzuat numarası ve mevzuat türüne göre arama desteği (takma adlarla).
+- [x] `resmi-gazete-cli search` komutunun terminale kazandırılması.
+- [x] Arama sonuçlarının Tablo, JSON veya Markdown formatında dışa aktarımı (`--format table/json/md`).
 
 ---
 

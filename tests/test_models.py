@@ -1,6 +1,12 @@
 import pytest
 from pydantic import ValidationError
-from resmi_gazete_cli.scraper.models import GazetteItem, DailyGazette
+from resmi_gazete_cli.scraper.models import (
+    GazetteItem,
+    DailyGazette,
+    SearchCriteria,
+    SearchResultItem,
+    SearchResponse
+)
 
 
 def test_gazette_item_valid():
@@ -55,3 +61,43 @@ def test_daily_gazette_with_items_and_error():
     assert len(gazette.items) == 1
     assert gazette.items[0].baslik == "Tebliğ"
     assert gazette.error == "Kısmi içerik"
+
+
+def test_search_criteria_defaults_and_validation():
+    """SearchCriteria modelinin varsayılan değerleri ve sınır doğrulaması."""
+    criteria = SearchCriteria()
+    assert criteria.page == 1
+    assert criteria.page_size == 10
+    assert criteria.kelime == ""
+
+    # Sayfa numarası 0 veya negatif olamaz
+    with pytest.raises(ValidationError):
+        SearchCriteria(page=0)
+
+    # Sayfa boyutu 100'den büyük olamaz
+    with pytest.raises(ValidationError):
+        SearchCriteria(page_size=101)
+
+
+def test_search_result_and_response_models():
+    """SearchResultItem ve SearchResponse modellerinin doğrulanması."""
+    item = SearchResultItem(
+        konu="Vergi Usul Kanunu Genel Tebliği",
+        mevzuat_adi="TEBLİĞLER",
+        resmi_gazete_sayisi=33426,
+        kanun_karar_no="597",
+        tarih="10.11.2026",
+        mukerrer="HAYIR",
+        url="https://resmigazete.gov.tr/fihrist?tarih=2026-11-10"
+    )
+    response = SearchResponse(
+        total_count=1,
+        page=1,
+        page_size=10,
+        results=[item]
+    )
+
+    assert response.total_count == 1
+    assert len(response.results) == 1
+    assert response.results[0].konu == "Vergi Usul Kanunu Genel Tebliği"
+    assert response.error is None

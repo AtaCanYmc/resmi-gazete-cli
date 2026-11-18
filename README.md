@@ -116,7 +116,7 @@ resmi-gazete-cli --version
 
 ### 1. Komut Satırı Arayüzü (CLI)
 
-Günün Resmi Gazete içeriğini listelemek için:
+#### Günlük Resmi Gazete (`daily`)
 
 ```bash
 # Günün sayısını formatlanmış tablo olarak listele
@@ -133,6 +133,25 @@ resmi-gazete-cli daily -c "Yönetmelik"
 
 # Çıktıyı JSON formatında al
 resmi-gazete-cli daily -j
+```
+
+#### Arşiv ve Detaylı Arama (`search`)
+
+```bash
+# Anahtar kelime ile arama yap
+resmi-gazete-cli search -k "vergi"
+
+# Tarih aralığı ve mevzuat türü ile arama yap (kanun, teblig, yonetmelik, cb-karar, aym)
+resmi-gazete-cli search -k "vergi" -t "teblig" -b 01.11.2026 -e 15.11.2026
+
+# Resmi Gazete sayısına göre ara
+resmi-gazete-cli search -s 33434
+
+# Çıktıyı Markdown formatında al
+resmi-gazete-cli search -k "yapay zeka" --format md
+
+# Çıktıyı JSON formatında al
+resmi-gazete-cli search -k "kvkk" --format json -l 20
 ```
 
 ### 2. Model Context Protocol (MCP) Sunucusu

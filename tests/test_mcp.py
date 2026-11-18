@@ -1,7 +1,17 @@
 import pytest
 from unittest.mock import patch, AsyncMock
-from resmi_gazete_cli.mcp.server import mcp, get_todays_gazette, get_gazette_by_date
-from resmi_gazete_cli.scraper.models import DailyGazette, GazetteItem
+from resmi_gazete_cli.mcp.server import (
+    mcp,
+    get_todays_gazette,
+    get_gazette_by_date,
+    search_gazette
+)
+from resmi_gazete_cli.scraper.models import (
+    DailyGazette,
+    GazetteItem,
+    SearchResponse,
+    SearchResultItem
+)
 
 
 def test_mcp_server_initialization():
@@ -48,3 +58,32 @@ async def test_mcp_get_gazette_by_date_tool():
         result = await get_gazette_by_date("17.11.2026")
 
         assert "# 17 Kasım 2026 Tarihli ve 33433 Sayılı Resmî Gazete" in result
+
+
+@pytest.mark.asyncio
+async def test_mcp_search_gazette_tool():
+    """search_gazette MCP aracının çalışması ve arama sonuçlarını formatlaması."""
+    mock_item = SearchResultItem(
+        konu="Örnek Tebliğ",
+        mevzuat_adi="TEBLİĞLER",
+        resmi_gazete_sayisi=33426,
+        kanun_karar_no="597",
+        tarih="10.11.2026",
+        url="https://resmigazete.gov.tr/teblig.htm"
+    )
+    mock_response = SearchResponse(
+        total_count=1,
+        page=1,
+        page_size=10,
+        results=[mock_item]
+    )
+
+    with patch("resmi_gazete_cli.scraper.client.ResmiGazeteClient.search", new_callable=AsyncMock) as mock_search:
+        mock_search.return_value = mock_response
+        result = await search_gazette(kelime="tebliğ", mevzuat_turu="teblig")
+
+        assert "# Resmi Gazete Arama Sonuçları (Toplam: 1, Sayfa: 1)" in result
+        assert "Örnek Tebliğ" in result
+        assert "[10.11.2026]" in result
+        assert "(Sayı: 33426)" in result
+        assert "Link: https://resmigazete.gov.tr/teblig.htm" in result

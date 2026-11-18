@@ -1,10 +1,11 @@
 import datetime
 import logging
 import ssl
-from typing import Union, Dict, Optional
+from typing import Union, Dict, Optional, Any, List
+from urllib.parse import urljoin
 import httpx
 
-from .models import DailyGazette
+from .models import DailyGazette, SearchCriteria, SearchResponse, SearchResultItem
 from .parser import parse_gazette_html
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,77 @@ def normalize_iso_date(target_date: Union[str, datetime.date]) -> str:
         return datetime.datetime.strptime(date_str, "%d/%m/%Y").strftime("%Y-%m-%d")
 
     return date_str
+
+
+def safe_iso_date(target_date: Optional[Union[str, datetime.date]]) -> str:
+    """Tarih girdisini doğrular ve boş değilse 'YYYY-MM-DD' formatına çevirir."""
+    if not target_date:
+        return ""
+    return normalize_iso_date(target_date)
+
+
+def to_tr_date_format(target_date: Optional[Union[str, datetime.date]]) -> str:
+    """Tarih girdisini 'GG.AA.YYYY' formatına dönüştürür."""
+    if not target_date:
+        return ""
+    if isinstance(target_date, (datetime.date, datetime.datetime)):
+        return target_date.strftime("%d.%m.%Y")
+
+    date_str = str(target_date).strip()
+    if "-" in date_str:
+        return datetime.datetime.strptime(date_str, "%Y-%m-%d").strftime("%d.%m.%Y")
+    elif "/" in date_str:
+        return datetime.datetime.strptime(date_str, "%d/%m/%Y").strftime("%d.%m.%Y")
+
+    return date_str
+
+
+def build_filter_payload(criteria: SearchCriteria) -> Dict[str, Any]:
+    """DataTables POST isteği için JSON gövdesini oluşturur."""
+    start_offset = (criteria.page - 1) * criteria.page_size
+    baslangic_iso = safe_iso_date(criteria.baslangic_tarihi)
+    bitis_iso = safe_iso_date(criteria.bitis_tarihi)
+
+    return {
+        "draw": criteria.page,
+        "start": start_offset,
+        "length": criteria.page_size,
+        "columns": [],
+        "order": [],
+        "search": {"value": "", "regex": False},
+        "parameters": {
+            "searchtype": "1",
+            "genelaranacakkelime": criteria.kelime or "",
+            "genelbaslangictarihi": baslangic_iso,
+            "genelbitistarihi": bitis_iso,
+            "genelsayi": str(criteria.sayi or ""),
+            "genelmevzuatsayisi": str(criteria.mevzuat_sayisi or ""),
+            "genelmukerrer": str(criteria.mukerrer or ""),
+            "genelmevzuatturu": str(criteria.mevzuat_turu or ""),
+            "genelkurumkodu": str(criteria.kurum_kodu or ""),
+        }
+    }
+
+
+def parse_search_items(raw_items: List[Dict[str, Any]], base_url: str) -> List[SearchResultItem]:
+    """Sunucudan dönen ham JSON listesini SearchResultItem modellerine dönüştürür."""
+    results = []
+    for item in raw_items:
+        item_url = item.get("url")
+        full_url = urljoin(base_url, item_url) if item_url else None
+        tarih_display = item.get("resmiGazeteTarihiFormatted") or item.get("resmiGazeteTarihi")
+
+        results.append(SearchResultItem(
+            konu=item.get("konu") or "",
+            mevzuat_adi=item.get("mevzuatAdi"),
+            resmi_gazete_sayisi=item.get("resmiGazeteSayisi"),
+            kanun_karar_no=item.get("kanunKararNo"),
+            tarih=tarih_display,
+            mukerrer=item.get("mukerrer"),
+            mukerrer_sayisi=item.get("mukerrerSayisi"),
+            url=full_url
+        ))
+    return results
 
 
 class ResmiGazeteClient:
@@ -97,10 +169,58 @@ class ResmiGazeteClient:
 
         gazette = await self._fetch_and_parse(url)
 
-        # Eğer sayfada içerik veya tarih eşleşmiyorsa
         if not gazette.error and not gazette.items and not gazette.tarih:
             return DailyGazette(
                 error=f"Belirtilen tarihte ({iso_date}) yayımlanmış Resmi Gazete sayısı bulunamadı."
             )
 
         return gazette
+
+    async def search(self, criteria: SearchCriteria) -> SearchResponse:
+        """Resmi Gazete arama sisteminde (/Home/Filter) filtreleme sorgusu yürütür."""
+        try:
+            payload = build_filter_payload(criteria)
+        except Exception as e:
+            return SearchResponse(error=f"Arama parametresi hatası: {e}")
+
+        search_headers = dict(self.headers)
+        search_headers.update({
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "X-Requested-With": "XMLHttpRequest",
+            "Origin": self.BASE_URL,
+            "Referer": f"{self.BASE_URL}/",
+        })
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=self.timeout,
+                headers=search_headers,
+                verify=self.verify,
+                follow_redirects=True
+            ) as client:
+                response = await client.post(self.FILTER_ENDPOINT, json=payload)
+                response.raise_for_status()
+
+                data = response.json()
+                total_count = data.get("recordsFiltered", data.get("recordsTotal", 0))
+                results = parse_search_items(data.get("data", []), base_url=self.BASE_URL)
+
+                return SearchResponse(
+                    total_count=total_count,
+                    page=criteria.page,
+                    page_size=criteria.page_size,
+                    results=results
+                )
+
+        except httpx.TimeoutException as e:
+            logger.error(f"Arama zaman aşımı: {e}")
+            return SearchResponse(error=f"Arama isteği zaman aşımına uğradı ({self.timeout}s): {str(e)}")
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Arama HTTP hatası ({e.response.status_code}): {e}")
+            return SearchResponse(error=f"Arama sunucu hatası ({e.response.status_code}): {str(e)}")
+        except httpx.RequestError as e:
+            logger.error(f"Arama bağlantı hatası: {e}")
+            return SearchResponse(error=f"Arama bağlantı hatası: {str(e)}")
+        except Exception as e:
+            logger.error(f"Arama beklenmeyen hata: {e}")
+            return SearchResponse(error=f"Arama sırasında beklenmeyen bir hata oluştu: {str(e)}")

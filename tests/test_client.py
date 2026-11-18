@@ -4,7 +4,13 @@ from unittest.mock import patch, AsyncMock
 import httpx
 
 from resmi_gazete_cli import __version__
-from resmi_gazete_cli.scraper.client import ResmiGazeteClient, normalize_iso_date
+from resmi_gazete_cli.scraper.client import (
+    ResmiGazeteClient,
+    normalize_iso_date,
+    safe_iso_date,
+    to_tr_date_format
+)
+from resmi_gazete_cli.scraper.models import SearchCriteria
 
 
 def test_package_version():
@@ -13,11 +19,18 @@ def test_package_version():
     assert re.match(r"^\d+\.\d+\.\d+", __version__)
 
 
-def test_normalize_iso_date():
-    """Farklı tarih formatlarının YYYY-MM-DD standardına dönüştürülmesi."""
+def test_date_helpers():
+    """Tarih dönüştürücü yardımcı fonksiyonların doğrulanması."""
     assert normalize_iso_date("18.11.2026") == "2026-11-18"
     assert normalize_iso_date("2026-11-18") == "2026-11-18"
     assert normalize_iso_date("18/11/2026") == "2026-11-18"
+
+    assert safe_iso_date("") == ""
+    assert safe_iso_date("15.11.2026") == "2026-11-15"
+
+    assert to_tr_date_format("") == ""
+    assert to_tr_date_format("2026-11-15") == "15.11.2026"
+    assert to_tr_date_format("15.11.2026") == "15.11.2026"
 
 
 def test_client_initialization_default():
@@ -112,6 +125,70 @@ async def test_get_gazette_by_date_invalid_format():
     gazette = await client.get_gazette_by_date("gecersiz.tarih.format")
     assert gazette.error is not None
     assert "Geçersiz tarih formatı" in gazette.error
+
+
+@pytest.mark.asyncio
+async def test_search_success():
+    """search metodunun başarıyla çalışması ve SearchResponse döndürmesi."""
+    client = ResmiGazeteClient()
+    mock_json = {
+        "draw": 1,
+        "recordsTotal": 150,
+        "recordsFiltered": 1,
+        "data": [
+            {
+                "konu": "Vergi Usul Kanunu Genel Tebliği",
+                "mevzuatAdi": "TEBLİĞLER",
+                "resmiGazeteSayisi": 33426,
+                "kanunKararNo": "597",
+                "resmiGazeteTarihiFormatted": "10.11.2026",
+                "mukerrer": "HAYIR",
+                "mukerrerSayisi": None,
+                "url": "/fihrist?tarih=2026-11-10"
+            }
+        ]
+    }
+    mock_response = httpx.Response(
+        200,
+        request=httpx.Request("POST", "https://resmigazete.gov.tr/Home/Filter"),
+        json=mock_json
+    )
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.post.return_value = mock_response
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        criteria = SearchCriteria(kelime="vergi", page=1, page_size=10)
+        resp = await client.search(criteria)
+
+        assert resp.error is None
+        assert resp.total_count == 1
+        assert len(resp.results) == 1
+        assert resp.results[0].konu == "Vergi Usul Kanunu Genel Tebliği"
+        assert resp.results[0].mevzuat_adi == "TEBLİĞLER"
+        assert resp.results[0].url == "https://resmigazete.gov.tr/fihrist?tarih=2026-11-10"
+
+
+@pytest.mark.asyncio
+async def test_search_error_handling():
+    """search metodunda zaman aşımı ve HTTP hatalarının yakalanması."""
+    client = ResmiGazeteClient(timeout=5)
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.post.side_effect = httpx.TimeoutException("Timeout")
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        criteria = SearchCriteria(kelime="test")
+        resp = await client.search(criteria)
+
+        assert resp.error is not None
+        assert "zaman aşımına uğradı" in resp.error
 
 
 @pytest.mark.asyncio
