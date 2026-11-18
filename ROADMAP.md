@@ -1,0 +1,41 @@
+# Yol Haritası (Roadmap)
+
+Bu belge, `resmi-gazete-cli` projesinin sürüm hedeflerini ve planlanan teknik kilometre taşlarını listeler.
+
+---
+
+## v0.1.0: Temel İskelet ve Asenkron İstemci (Mevcut)
+
+- [x] Hatchling tabanlı `pyproject.toml` paketleme altyapısının kurulması.
+- [x] Modüler mimarinin oluşturulması (`scraper`, `cli`, `mcp`).
+- [x] `GazetteItem` ve `DailyGazette` Pydantic veri modellerinin tanımlanması.
+- [x] `httpx.AsyncClient` tabanlı `ResmiGazeteClient` iskeletinin ve hata yönetiminin yazılması.
+- [x] Repository governance dosyalarının (`LICENSE`, `SECURITY`, `CONTRIBUTING`) eklenmesi.
+
+---
+
+## v0.2.0: Günlük Gazete Scraping ve CLI Arayüzü
+
+- [ ] `resmigazete.gov.tr` ana sayfasından günün sayısı, tarihi ve bölüm başlıklarının HTML parsing mantığının yazılması (`BeautifulSoup4` / `lxml`).
+- [ ] Yürütme ve İdare, Yargı ve İlanlar bölümlerinin kategorize edilerek yapısal modellere dönüştürülmesi.
+- [ ] `resmi-gazete-cli daily` komutunun eklenmesi ve `rich` kütüphanesi ile renklendirilmiş tablo çıktısı.
+- [ ] Mükerrer sayıların tespiti ve listelenmesi.
+- [ ] Çevrimdışı ve mock yanıtlar için birim testlerinin `tests/test_scraper.py` altında yazılması.
+
+---
+
+## v0.3.0: Arama Endpoint'i ve Filtreleme
+
+- [ ] `resmigazete.gov.tr/Home/Filter` endpoint'ine uygun arama isteği parametrelerinin `SearchCriteria` modeline bağlanması.
+- [ ] Kelime, tarih aralığı, sayı ve mevzuat türüne göre arama desteği.
+- [ ] `resmi-gazete-cli search` komutunun terminale kazandırılması.
+- [ ] Arama sonuçlarının JSON veya Markdown formatında dışa aktarımı (`--format json/md`).
+
+---
+
+## v0.4.0: Model Context Protocol (FastMCP) Entegrasyonu
+
+- [ ] `FastMCP` stdio sunucusunun tamamlanması (`resmi-gazete-mcp`).
+- [ ] `get_todays_gazette` MCP aracının LLM ajanlarına açılması.
+- [ ] `search_gazette` MCP aracının parametrik filtrelerle entegre edilmesi.
+- [ ] Claude Desktop ve Cursor yapılandırma rehberinin dokümantasyona eklenmesi.

@@ -1,0 +1,30 @@
+name: Özellik Talebi (Feature Request)
+description: Proje için yeni bir fikir veya geliştirme önerin
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Topluluk tarafından onaylanan ve teknik fizibilitesi olan özellik talepleri memnuniyetle karşılanır.
+  - type: textarea
+    id: problem
+    attributes:
+      label: İlgili Problem veya İhtiyaç
+      description: Bu özellik hangi problemi çözüyor veya ne tür bir ihtiyacı karşılıyor?
+      placeholder: Hangi durumda bu özelliğe ihtiyaç duyuyorsunuz?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Önerilen Çözüm veya Davranış
+      description: Özelliğin nasıl çalışması gerektiğini ve beklenen kullanıcı arayüzünü (CLI, API veya MCP) açıklayın.
+      placeholder: Yeni bir CLI flag'i veya MCP tool'u önerisi.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Değerlendirilen Alternatifler
+      description: Varsa düşündüğünüz alternatif yöntemler veya geçici çözümler.
