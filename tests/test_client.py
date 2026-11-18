@@ -192,6 +192,42 @@ async def test_search_error_handling():
 
 
 @pytest.mark.asyncio
+async def test_get_document_content_pdf():
+    """Doğrudan PDF olan linklerde bilgi mesajı dönülmesi."""
+    client = ResmiGazeteClient()
+    doc = await client.get_document_content("https://resmigazete.gov.tr/eskiler/test.pdf")
+
+    assert doc.content_type == "application/pdf"
+    assert "Bu doküman doğrudan bir PDF dosyasıdır" in doc.icerik
+    assert doc.error is None
+
+
+@pytest.mark.asyncio
+async def test_get_document_content_html_success():
+    """HTML dokümanının başarıyla indirilip metin olarak ayrıştırılması."""
+    client = ResmiGazeteClient()
+    mock_html = b"<html><head><title>Yonetmelik</title></head><body><p>Madde 1- Yonetmelik metni.</p></body></html>"
+    mock_response = httpx.Response(
+        200,
+        request=httpx.Request("GET", "https://resmigazete.gov.tr/eskiler/test.htm"),
+        content=mock_html
+    )
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        doc = await client.get_document_content("https://resmigazete.gov.tr/eskiler/test.htm")
+
+        assert doc.error is None
+        assert doc.content_type == "text/html"
+        assert "Madde 1- Yonetmelik metni." in doc.icerik
+
+
+@pytest.mark.asyncio
 async def test_get_todays_gazette_timeout():
     """Zaman aşımı (TimeoutException) hatasının düzgün yakalanıp modellenmesi."""
     client = ResmiGazeteClient(timeout=5)

@@ -156,9 +156,23 @@ resmi-gazete-cli search -k "kvkk" --format json -l 20
 
 ### 2. Model Context Protocol (MCP) Sunucusu
 
-Proje, LLM ajanlarıyla yerel stdio protokolü üzerinden haberleşen `FastMCP` sunucusu içerir.
+Proje, LLM ajanlarının (Claude Desktop, Cursor, Windsurf, Cline vb.) Resmi Gazete verilerine canlı erişebilmesi için `FastMCP` stdio sunucusu içerir.
 
-Claude Desktop yapılandırmanıza (`claude_desktop_config.json`) eklemek için:
+#### Sunulan MCP Araçları (Tools)
+
+| Araç Adı | Açıklama | Temel Parametreler |
+| --- | --- | --- |
+| `get_todays_gazette` | Güncel Resmi Gazete özetini, bölüm başlıklarını ve madde linklerini listeler. | Parametresiz |
+| `get_gazette_by_date` | Belirli bir tarihteki Resmi Gazete sayısını listeler. | `tarih` (GG.AA.YYYY veya YYYY-MM-DD), `mukerrer` (opsiyonel) |
+| `search_gazette` | Arşivde anahtar kelime, tarih aralığı, sayı ve mevzuat türüyle parametrik arama yapar. | `kelime`, `baslangic_tarihi`, `bitis_tarihi`, `sayi`, `mevzuat_turu`, `page` |
+| `get_document_content` | Karar veya yönetmeliğin metin içeriğini indirip temizler. | `url` (dokümanın web bağlantısı) |
+
+#### Claude Desktop Entegrasyonu
+
+Claude Desktop yapılandırma dosyanıza aşağıdaki bloğu ekleyin:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -170,14 +184,45 @@ Claude Desktop yapılandırmanıza (`claude_desktop_config.json`) eklemek için:
 }
 ```
 
-Cursor veya harici bir ortam için mutlak Python yolu gerekiyorsa:
+Sanal ortam ile çalıştırmak isterseniz mutlak python yolunu belirtin:
 
 ```json
 {
   "mcpServers": {
     "resmi-gazete": {
-      "command": "/mutlak/yol/.venv/bin/python",
+      "command": "/Users/KULLANICI_ADI/PycharmProjects/resmi-gazete-cli/.venv/bin/python",
       "args": ["-m", "resmi_gazete_cli.mcp.server"]
+    }
+  }
+}
+```
+
+#### Cursor Entegrasyonu
+
+1. Cursor ayarlarını açın: **Settings > Features > MCP**.
+2. **Add New MCP Server** butonuna tıklayın.
+3. Bilgileri girin:
+   - **Name:** `resmi-gazete`
+   - **Type:** `command`
+   - **Command:** `resmi-gazete-mcp` (veya sanal ortam yolu: `/path/to/.venv/bin/resmi-gazete-mcp`)
+4. Sunucuyu kaydedip yeşil durum ışığını doğrulayın. Cursor Agent veya Composer içinde *"Günün Resmi Gazete kararlarını getir"* veya *"Vergi Usul Kanunu tebliğlerini ara"* komutlarını verebilirsiniz.
+
+#### VS Code (Cline / Roo Code) Entegrasyonu
+
+`cline_mcp_settings.json` içerisine ekleyin:
+
+```json
+{
+  "mcpServers": {
+    "resmi-gazete": {
+      "command": "resmi-gazete-mcp",
+      "disabled": false,
+      "autoApprove": [
+        "get_todays_gazette",
+        "get_gazette_by_date",
+        "search_gazette",
+        "get_document_content"
+      ]
     }
   }
 }

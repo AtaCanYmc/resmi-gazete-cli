@@ -5,6 +5,7 @@ from .scraper import (
     SearchCriteria,
     SearchResultItem,
     SearchResponse,
+    GazetteDocument,
     parse_gazette_html,
 )
 
@@ -17,6 +18,7 @@ __all__ = [
     "SearchCriteria",
     "SearchResultItem",
     "SearchResponse",
+    "GazetteDocument",
     "parse_gazette_html",
     "__version__",
 ]

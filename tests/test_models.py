@@ -5,7 +5,8 @@ from resmi_gazete_cli.scraper.models import (
     DailyGazette,
     SearchCriteria,
     SearchResultItem,
-    SearchResponse
+    SearchResponse,
+    GazetteDocument
 )
 
 
@@ -101,3 +102,16 @@ def test_search_result_and_response_models():
     assert len(response.results) == 1
     assert response.results[0].konu == "Vergi Usul Kanunu Genel Tebliği"
     assert response.error is None
+
+
+def test_gazette_document_model():
+    """GazetteDocument modelinin doğrulanması."""
+    doc = GazetteDocument(
+        url="https://resmigazete.gov.tr/eskiler/test.htm",
+        content_type="text/html",
+        icerik="Doküman içeriği"
+    )
+    assert doc.url == "https://resmigazete.gov.tr/eskiler/test.htm"
+    assert doc.content_type == "text/html"
+    assert doc.icerik == "Doküman içeriği"
+    assert doc.error is None

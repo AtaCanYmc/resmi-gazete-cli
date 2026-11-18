@@ -143,6 +143,22 @@ async def search_gazette(
     return "\n".join(lines)
 
 
+@mcp.tool()
+async def get_document_content(url: str) -> str:
+    """
+    Resmi Gazete karar veya yönetmelik dokümanının metin içeriğini çeker.
+    url: Dokümanın bağlantı adresi (HTM veya PDF)
+    """
+    client = ResmiGazeteClient()
+    doc = await client.get_document_content(url)
+
+    if doc.error:
+        return f"Doküman Hatası: {doc.error}"
+
+    header = f"# Doküman İçeriği: {doc.url}\nTür: {doc.content_type}\n\n"
+    return header + doc.icerik
+
+
 def main():
     mcp.run()
 

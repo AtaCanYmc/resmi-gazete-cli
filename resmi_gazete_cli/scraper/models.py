@@ -61,3 +61,12 @@ class SearchResponse(BaseModel):
     page_size: int = Field(10, description="Sayfa başı kayıt sayısı")
     results: List[SearchResultItem] = Field(default_factory=list, description="Arama sonuçları")
     error: Optional[str] = Field(None, description="Hata mesajı (varsa)")
+
+
+class GazetteDocument(BaseModel):
+    """Resmi Gazete karar veya yönetmelik doküman metin içeriği."""
+
+    url: str = Field(..., description="Dokümanın bağlantı adresi")
+    content_type: str = Field("text/html", description="MIME türü")
+    icerik: str = Field("", description="Ayrıştırılmış metin içeriği")
+    error: Optional[str] = Field(None, description="Hata mesajı (varsa)")

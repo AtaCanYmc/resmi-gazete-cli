@@ -33,9 +33,11 @@ Bu belge, `resmi-gazete-cli` projesinin sürüm hedeflerini ve planlanan teknik 
 
 ---
 
-## v0.4.0: Model Context Protocol (FastMCP) Entegrasyonu
+## v0.4.0: Model Context Protocol (FastMCP) Entegrasyonu (Tamamlandı)
 
-- [ ] `FastMCP` stdio sunucusunun tamamlanması (`resmi-gazete-mcp`).
-- [ ] `get_todays_gazette` MCP aracının LLM ajanlarına açılması.
-- [ ] `search_gazette` MCP aracının parametrik filtrelerle entegre edilmesi.
-- [ ] Claude Desktop ve Cursor yapılandırma rehberinin dokümantasyona eklenmesi.
+- [x] FastMCP stdio sunucusunun tamamlanması (`resmi-gazete-mcp`).
+- [x] `get_todays_gazette` MCP aracının LLM ajanlarına açılması.
+- [x] `get_gazette_by_date` MCP aracının belirli tarihler için entegre edilmesi.
+- [x] `search_gazette` MCP aracının parametrik filtrelerle entegre edilmesi.
+- [x] `get_document_content` MCP aracının metin içeriği getirme yeteneğiyle eklenmesi.
+- [x] Claude Desktop, Cursor ve Windsurf yapılandırma rehberinin dokümantasyona eklenmesi.

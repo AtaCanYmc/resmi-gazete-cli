@@ -3,9 +3,10 @@ import logging
 import ssl
 from typing import Union, Dict, Optional, Any, List
 from urllib.parse import urljoin
+from bs4 import BeautifulSoup
 import httpx
 
-from .models import DailyGazette, SearchCriteria, SearchResponse, SearchResultItem
+from .models import DailyGazette, SearchCriteria, SearchResponse, SearchResultItem, GazetteDocument
 from .parser import parse_gazette_html
 
 logger = logging.getLogger(__name__)
@@ -224,3 +225,57 @@ class ResmiGazeteClient:
         except Exception as e:
             logger.error(f"Arama beklenmeyen hata: {e}")
             return SearchResponse(error=f"Arama sırasında beklenmeyen bir hata oluştu: {str(e)}")
+
+    async def get_document_content(self, url: str) -> GazetteDocument:
+        """Verilen Resmi Gazete doküman URL'sinden (HTM/HTML) metin içeriğini çeker."""
+        target_url = url if url.startswith("http") else urljoin(self.BASE_URL, url)
+
+        if target_url.lower().endswith(".pdf"):
+            return GazetteDocument(
+                url=target_url,
+                content_type="application/pdf",
+                icerik=(
+                    f"Bu doküman doğrudan bir PDF dosyasıdır: {target_url}\n"
+                    "PDF içeriğini incelemek için PDF okuyucu veya markitdown aracını kullanabilirsiniz."
+                )
+            )
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=self.timeout,
+                headers=self.headers,
+                verify=self.verify,
+                follow_redirects=True
+            ) as client:
+                response = await client.get(target_url)
+                response.raise_for_status()
+
+                soup = BeautifulSoup(response.content, "html.parser", from_encoding="windows-1254")
+                for tag in soup(["script", "style"]):
+                    tag.decompose()
+
+                text = soup.get_text(separator="\n", strip=True)
+                return GazetteDocument(
+                    url=str(response.url),
+                    content_type="text/html",
+                    icerik=text
+                )
+
+        except httpx.TimeoutException as e:
+            logger.error(f"Doküman zaman aşımı: {e}")
+            return GazetteDocument(
+                url=target_url,
+                error=f"Doküman indirme zaman aşımına uğradı ({self.timeout}s): {str(e)}"
+            )
+        except httpx.HTTPStatusError as e:
+            logger.error(f"Doküman HTTP hatası ({e.response.status_code}): {e}")
+            return GazetteDocument(
+                url=target_url,
+                error=f"Doküman bulunamadı ({e.response.status_code}): {str(e)}"
+            )
+        except Exception as e:
+            logger.error(f"Doküman okuma hatası: {e}")
+            return GazetteDocument(
+                url=target_url,
+                error=f"Doküman okunurken bir hata oluştu: {str(e)}"
+            )

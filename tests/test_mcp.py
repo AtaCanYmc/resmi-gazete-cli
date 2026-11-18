@@ -4,13 +4,15 @@ from resmi_gazete_cli.mcp.server import (
     mcp,
     get_todays_gazette,
     get_gazette_by_date,
-    search_gazette
+    search_gazette,
+    get_document_content
 )
 from resmi_gazete_cli.scraper.models import (
     DailyGazette,
     GazetteItem,
     SearchResponse,
-    SearchResultItem
+    SearchResultItem,
+    GazetteDocument
 )
 
 
@@ -87,3 +89,20 @@ async def test_mcp_search_gazette_tool():
         assert "[10.11.2026]" in result
         assert "(Sayı: 33426)" in result
         assert "Link: https://resmigazete.gov.tr/teblig.htm" in result
+
+
+@pytest.mark.asyncio
+async def test_mcp_get_document_content_tool():
+    """get_document_content MCP aracının doküman içeriğini döndürmesi."""
+    mock_doc = GazetteDocument(
+        url="https://resmigazete.gov.tr/eskiler/test.htm",
+        content_type="text/html",
+        icerik="MADDE 1- Bu bir test yönetmeliğidir."
+    )
+
+    with patch("resmi_gazete_cli.scraper.client.ResmiGazeteClient.get_document_content", new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = mock_doc
+        result = await get_document_content("https://resmigazete.gov.tr/eskiler/test.htm")
+
+        assert "# Doküman İçeriği: https://resmigazete.gov.tr/eskiler/test.htm" in result
+        assert "MADDE 1- Bu bir test yönetmeliğidir." in result
