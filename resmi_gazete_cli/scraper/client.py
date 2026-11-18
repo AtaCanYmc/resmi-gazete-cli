@@ -1,11 +1,27 @@
+import datetime
 import logging
 import ssl
-from typing import Union, Dict
+from typing import Union, Dict, Optional
 import httpx
 
 from .models import DailyGazette
+from .parser import parse_gazette_html
 
 logger = logging.getLogger(__name__)
+
+
+def normalize_iso_date(target_date: Union[str, datetime.date]) -> str:
+    """Tarih girdisini 'YYYY-MM-DD' formatına dönüştürür."""
+    if isinstance(target_date, (datetime.date, datetime.datetime)):
+        return target_date.strftime("%Y-%m-%d")
+
+    date_str = str(target_date).strip()
+    if "." in date_str:
+        return datetime.datetime.strptime(date_str, "%d.%m.%Y").strftime("%Y-%m-%d")
+    elif "/" in date_str:
+        return datetime.datetime.strptime(date_str, "%d/%m/%Y").strftime("%Y-%m-%d")
+
+    return date_str
 
 
 class ResmiGazeteClient:
@@ -27,14 +43,13 @@ class ResmiGazeteClient:
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
                 "Chrome/120.0.0.0 Safari/537.36"
             ),
-            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
             "Connection": "keep-alive",
-            "X-Requested-With": "XMLHttpRequest",
         }
 
-    async def get_todays_gazette(self) -> DailyGazette:
-        """Günün yayımlanan Resmi Gazete içeriklerini çeker."""
+    async def _fetch_and_parse(self, url: str) -> DailyGazette:
+        """Belirtilen URL'ye istek atarak HTML yanıtını ayrıştırır ve hataları yönetir."""
         try:
             async with httpx.AsyncClient(
                 timeout=self.timeout,
@@ -42,12 +57,9 @@ class ResmiGazeteClient:
                 verify=self.verify,
                 follow_redirects=True
             ) as client:
-                # İlerleyen aşamada günün gazetesini çekme ve parsing mantığı burada yer alacak.
-                response = await client.get(self.BASE_URL)
+                response = await client.get(url)
                 response.raise_for_status()
-
-                # Şimdilik boş iskelet
-                return DailyGazette(items=[])
+                return parse_gazette_html(response.text, base_url=self.BASE_URL)
 
         except httpx.TimeoutException as e:
             logger.error(f"Zaman aşımı hatası: {e}")
@@ -63,3 +75,32 @@ class ResmiGazeteClient:
         except Exception as e:
             logger.error(f"Beklenmeyen hata: {e}")
             return DailyGazette(error=f"Beklenmeyen bir hata oluştu: {str(e)}")
+
+    async def get_todays_gazette(self) -> DailyGazette:
+        """Günün yayımlanan Resmi Gazete içeriğini çeker ve modeller."""
+        return await self._fetch_and_parse(self.BASE_URL)
+
+    async def get_gazette_by_date(
+        self,
+        tarih: Union[str, datetime.date],
+        mukerrer: Optional[int] = None
+    ) -> DailyGazette:
+        """Belirtilen tarih ve mükerrer numarasına göre Resmi Gazete içeriğini çeker."""
+        try:
+            iso_date = normalize_iso_date(tarih)
+        except Exception as e:
+            return DailyGazette(error=f"Geçersiz tarih formatı: {e}. 'GG.AA.YYYY' veya 'YYYY-MM-DD' kullanın.")
+
+        url = f"{self.BASE_URL}/fihrist?tarih={iso_date}"
+        if mukerrer is not None:
+            url += f"&mukerrer={mukerrer}"
+
+        gazette = await self._fetch_and_parse(url)
+
+        # Eğer sayfada içerik veya tarih eşleşmiyorsa
+        if not gazette.error and not gazette.items and not gazette.tarih:
+            return DailyGazette(
+                error=f"Belirtilen tarihte ({iso_date}) yayımlanmış Resmi Gazete sayısı bulunamadı."
+            )
+
+        return gazette

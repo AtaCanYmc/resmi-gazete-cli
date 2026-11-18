@@ -14,13 +14,13 @@ Bu belge, `resmi-gazete-cli` projesinin sürüm hedeflerini ve planlanan teknik 
 
 ---
 
-## v0.2.0: Günlük Gazete Scraping ve CLI Arayüzü
+## v0.2.0: Günlük Gazete Scraping ve CLI Arayüzü (Tamamlandı)
 
-- [ ] `resmigazete.gov.tr` ana sayfasından günün sayısı, tarihi ve bölüm başlıklarının HTML parsing mantığının yazılması (`BeautifulSoup4` / `lxml`).
-- [ ] Yürütme ve İdare, Yargı ve İlanlar bölümlerinin kategorize edilerek yapısal modellere dönüştürülmesi.
-- [ ] `resmi-gazete-cli daily` komutunun eklenmesi ve `rich` kütüphanesi ile renklendirilmiş tablo çıktısı.
-- [ ] Mükerrer sayıların tespiti ve listelenmesi.
-- [ ] Çevrimdışı ve mock yanıtlar için birim testlerinin `tests/test_scraper.py` altında yazılması.
+- [x] `resmigazete.gov.tr` ana sayfasından günün sayısı, tarihi ve bölüm başlıklarının HTML parsing mantığının yazılması (`BeautifulSoup4` / `lxml`).
+- [x] Yürütme ve İdare, Yargı ve İlanlar bölümlerinin kategorize edilerek yapısal modellere dönüştürülmesi.
+- [x] `resmi-gazete-cli daily` komutunun eklenmesi ve `rich` kütüphanesi ile renklendirilmiş tablo çıktısı.
+- [x] Mükerrer sayıların tespiti ve listelenmesi.
+- [x] Çevrimdışı ve mock yanıtlar için birim testlerinin `tests/test_parser.py`, `tests/test_client.py` ve `tests/test_cli.py` altında yazılması.
 
 ---
 

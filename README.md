@@ -119,7 +119,20 @@ resmi-gazete-cli --version
 Günün Resmi Gazete içeriğini listelemek için:
 
 ```bash
-resmi-gazete-cli --help
+# Günün sayısını formatlanmış tablo olarak listele
+resmi-gazete-cli daily
+
+# Belirli bir tarihteki sayıyı listele (GG.AA.YYYY veya YYYY-MM-DD)
+resmi-gazete-cli daily -d 17.11.2026
+
+# Mükerrer sayıyı listele
+resmi-gazete-cli daily -d 2026-10-27 -m 1
+
+# Kategoriye göre filtrele (örn. Cumhurbaşkanı, Yönetmelik, Tebliğ, İlan)
+resmi-gazete-cli daily -c "Yönetmelik"
+
+# Çıktıyı JSON formatında al
+resmi-gazete-cli daily -j
 ```
 
 ### 2. Model Context Protocol (MCP) Sunucusu

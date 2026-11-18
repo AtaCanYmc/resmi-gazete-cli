@@ -4,13 +4,20 @@ from unittest.mock import patch, AsyncMock
 import httpx
 
 from resmi_gazete_cli import __version__
-from resmi_gazete_cli.scraper.client import ResmiGazeteClient
+from resmi_gazete_cli.scraper.client import ResmiGazeteClient, normalize_iso_date
 
 
 def test_package_version():
     """Paket sürümünün semver formatında olduğunu doğrular."""
     assert __version__ is not None
     assert re.match(r"^\d+\.\d+\.\d+", __version__)
+
+
+def test_normalize_iso_date():
+    """Farklı tarih formatlarının YYYY-MM-DD standardına dönüştürülmesi."""
+    assert normalize_iso_date("18.11.2026") == "2026-11-18"
+    assert normalize_iso_date("2026-11-18") == "2026-11-18"
+    assert normalize_iso_date("18/11/2026") == "2026-11-18"
 
 
 def test_client_initialization_default():
@@ -34,10 +41,16 @@ def test_client_initialization_custom():
 async def test_get_todays_gazette_success():
     """Başarılı 200 OK yanıtı durumunda istemcinin işleyişi."""
     client = ResmiGazeteClient(timeout=20, verify=True)
+    html_mock = """
+    <div class="row tarih">18 Kasım 2026 Tarihli ve 33434 Sayılı Resmî Gazete</div>
+    <div class="html-content">
+        <div class="fihrist-item"><a href="/karar.pdf">–– Test Kararı</a></div>
+    </div>
+    """
     mock_response = httpx.Response(
         200,
         request=httpx.Request("GET", "https://resmigazete.gov.tr"),
-        text="<html><body>Resmi Gazete</body></html>"
+        text=html_mock
     )
 
     with patch("httpx.AsyncClient") as mock_client_cls:
@@ -56,7 +69,49 @@ async def test_get_todays_gazette_success():
             follow_redirects=True
         )
         assert gazette.error is None
-        assert isinstance(gazette.items, list)
+        assert gazette.tarih == "18 Kasım 2026"
+        assert gazette.sayi == "33434"
+        assert len(gazette.items) == 1
+        assert gazette.items[0].baslik == "Test Kararı"
+
+
+@pytest.mark.asyncio
+async def test_get_gazette_by_date_success():
+    """Belirli bir tarihteki gazetenin başarıyla çekilmesi."""
+    client = ResmiGazeteClient()
+    html_mock = """
+    <div class="preview-title">17 Kasım 2026 Tarihli ve 33433 Sayılı Resmî Gazete</div>
+    <div class="html-content">
+        <div class="fihrist-item"><a href="/karar.htm">–– Adli Tıp Yönetmeliği</a></div>
+    </div>
+    """
+    mock_response = httpx.Response(
+        200,
+        request=httpx.Request("GET", "https://resmigazete.gov.tr/fihrist?tarih=2026-11-17"),
+        text=html_mock
+    )
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_instance = AsyncMock()
+        mock_instance.get.return_value = mock_response
+        mock_instance.__aenter__.return_value = mock_instance
+        mock_instance.__aexit__.return_value = None
+        mock_client_cls.return_value = mock_instance
+
+        gazette = await client.get_gazette_by_date("17.11.2026")
+
+        assert gazette.error is None
+        assert gazette.sayi == "33433"
+        assert len(gazette.items) == 1
+
+
+@pytest.mark.asyncio
+async def test_get_gazette_by_date_invalid_format():
+    """Geçersiz tarih girildiğinde hata mesajı döndürülmesi."""
+    client = ResmiGazeteClient()
+    gazette = await client.get_gazette_by_date("gecersiz.tarih.format")
+    assert gazette.error is not None
+    assert "Geçersiz tarih formatı" in gazette.error
 
 
 @pytest.mark.asyncio
