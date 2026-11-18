@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3](https://github.com/AtaCanYmc/resmi-gazete-cli/compare/v0.1.2...v0.1.3) (2026-11-18)
+
+
+### Features
+
+* **docs:** add interactive documentation web UI and GitHub Pages workflow ([e160000](https://github.com/AtaCanYmc/resmi-gazete-cli/commit/e16000021d095a9be55bc3252af123f356f5f9d3))
+* update resmi-gazete-cli to version 0.1.2 and enhance installation process with additional resources ([a3c084e](https://github.com/AtaCanYmc/resmi-gazete-cli/commit/a3c084e33cd355d8ae7bf33fca2fbcb2612481a3))
+
 ## [0.1.2](https://github.com/AtaCanYmc/resmi-gazete-cli/compare/v0.1.1...v0.1.2) (2026-11-18)
 
 
